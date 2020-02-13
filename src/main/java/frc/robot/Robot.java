@@ -168,12 +168,12 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
   
-  
+  SmartDashboard.putNumber("Test", 1); 
   }
 
   @Override
   public void teleopPeriodic() {
-  
+  SmartDashboard.putNumber("Test2", 2);
   m_myRobot.arcadeDrive(driveController.getX(Hand.kRight), driveController.getY(Hand.kLeft));
   //to be changed below based on actual robot values
   final double h2 = 90.875; //height of target
