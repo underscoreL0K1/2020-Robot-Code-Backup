@@ -11,7 +11,6 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
-import com.ctre.phoenix.sensors.CANCoder;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -187,15 +186,17 @@ public class Robot extends TimedRobot {
   final double tanValue = Math.tan(angleboth);
   
 
- /* 
-  if(driveController.getAButton()){
-    m_talon5.set(ControlMode.PercentOutput, 1);
-  }else{
-    m_talon5.set(ControlMode.PercentOutput, 0);
+ 
+  if(driveController.getAButtonPressed()){
+    m_shooterleft.set(0.25);
+    m_shooterright.set(-0.25);
+  }else if(driveController.getBButtonPressed()) {
+    m_shooterleft.set(0); 
+    m_shooterright.set(0);
   }
   if(driveController.getAButtonPressed()){
     m_talon5.setSelectedSensorPosition(0);
-  }*/
+  }
   //SMART DASHBOARD
   CANEncoder shootEncoder1 = new CANEncoder(m_shooterleft);
   CANEncoder shootEncoder2 = new CANEncoder(m_shooterright); 
