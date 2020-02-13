@@ -88,7 +88,7 @@ public class Robot extends TimedRobot {
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
 
-
+  s_ultra1 = new Ultrasonic(0, 1);
 
   final SpeedControllerGroup left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
   final SpeedControllerGroup right = new SpeedControllerGroup(m_talon3, m_talon4, m_talon6);
@@ -168,7 +168,6 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
   
-  SmartDashboard.putNumber("Test", 1); 
   }
 
   @Override
@@ -212,7 +211,7 @@ public class Robot extends TimedRobot {
   SmartDashboard.putNumber("NeoEncoder2", shootEncoder2.getPosition()); 
   SmartDashboard.putNumber("NeoEncoder2ConversionFactor", shootEncoder2.getPositionConversionFactor()); 
   SmartDashboard.putNumber("NeoEncoder1ConversionFactor", shootEncoder1.getPositionConversionFactor());
-
+  SmartDashboard.putNumber("ultra1", s_ultra1.getRangeInches());
 
   
   }
