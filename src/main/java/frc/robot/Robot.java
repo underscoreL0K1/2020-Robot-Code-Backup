@@ -191,20 +191,24 @@ public class Robot extends TimedRobot {
     if(s_ultra1.getRangeInches() < 8){
         //run the index for however long
         s_ultra1Range = true;
+    }else{
+        s_ultra1Range = false;
     }
   }
 
+ if(operateController.getRawAxis(2) > .5){
+   //collector runs
+   collecting = true;
+ }else{
+   collecting = false;
+ }
+
+ if(operateController.getRawAxis(3) > .5){
+   //pid shit
+ }else{
+   
+ }
  
-  if(driveController.getAButtonPressed()){
-    m_shooterleft.set(0.25);
-    m_shooterright.set(-0.25);
-  }else if(driveController.getBButtonPressed()) {
-    m_shooterleft.set(0); 
-    m_shooterright.set(0);
-  }
-  if(driveController.getAButtonPressed()){
-    m_talon5.setSelectedSensorPosition(0);
-  }
   //SMART DASHBOARD
   CANEncoder shootEncoder1 = new CANEncoder(m_shooterleft);
   CANEncoder shootEncoder2 = new CANEncoder(m_shooterright); 
