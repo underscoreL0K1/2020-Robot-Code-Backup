@@ -46,7 +46,10 @@ public class Robot extends TimedRobot {
 
   private static final int shooterCANID_1 = 5;
   private static final int shooterCANID_2 = 6;
+  
   private double gR = 10.25641025;
+  private boolean collecting = true;
+  private boolean s_ultra1Range = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
   Spark m_hood;
@@ -166,12 +169,11 @@ public class Robot extends TimedRobot {
   }
   @Override
   public void teleopInit() {
-  
+    s_ultra1.setAutomaticMode(true);
   }
 
   @Override
   public void teleopPeriodic() {
-  SmartDashboard.putNumber("Test2", 2);
   m_myRobot.arcadeDrive(driveController.getX(Hand.kRight), driveController.getY(Hand.kLeft));
   //to be changed below based on actual robot values
   final double h2 = 90.875; //height of target
@@ -185,6 +187,12 @@ public class Robot extends TimedRobot {
   final double angleboth = a1 + a2;
   final double tanValue = Math.tan(angleboth);
   
+  if(collecting){
+    if(s_ultra1.getRangeInches() < 8){
+        //run the index for however long
+        s_ultra1Range = true;
+    }
+  }
 
  
   if(driveController.getAButtonPressed()){
@@ -213,8 +221,8 @@ public class Robot extends TimedRobot {
   SmartDashboard.putNumber("NeoEncoder2ConversionFactor", shootEncoder2.getPositionConversionFactor()); 
   SmartDashboard.putNumber("NeoEncoder1ConversionFactor", shootEncoder1.getPositionConversionFactor());
   SmartDashboard.putNumber("ultra1", s_ultra1.getRangeInches());
+  SmartDashboard.putBoolean("BallIndex", s_ultra1Range);
 
-  
   }
   
   @Override
@@ -231,4 +239,7 @@ public class Robot extends TimedRobot {
       comp.stop();
     }
   }
+
+
+    
 }
