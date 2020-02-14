@@ -50,6 +50,7 @@ public class Robot extends TimedRobot {
   private double gR = 10.25641025;
   private boolean collecting = true;
   private boolean s_ultra1Range = false;
+  private boolean s_ultra2Range = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
   Spark m_hood;
@@ -233,7 +234,7 @@ public class Robot extends TimedRobot {
   SmartDashboard.putNumber("NeoEncoder1ConversionFactor", shootEncoder1.getPositionConversionFactor());
   SmartDashboard.putNumber("ultra1", s_ultra1.getRangeInches());
   SmartDashboard.putBoolean("BallIndex", s_ultra1Range);
-
+  SmartDashboard.putBoolean("Index FULL", s_ultra2Range);
   }
   
   @Override
