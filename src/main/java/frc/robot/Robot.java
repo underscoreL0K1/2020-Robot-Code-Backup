@@ -56,6 +56,7 @@ public class Robot extends TimedRobot {
   Spark m_feeder; 
 
   private Ultrasonic s_ultra1;
+  private Ultrasonic s_ultra2;
 
   private WPI_TalonFX m_talon1;
   private WPI_TalonFX m_talon2;
@@ -91,6 +92,7 @@ public class Robot extends TimedRobot {
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
 
   s_ultra1 = new Ultrasonic(0, 1);
+  s_ultra2 = new Ultrasonic(2, 3);
 
   final SpeedControllerGroup left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
   final SpeedControllerGroup right = new SpeedControllerGroup(m_talon3, m_talon4, m_talon6);
@@ -101,9 +103,9 @@ public class Robot extends TimedRobot {
   m_myRobot = new DifferentialDrive(left, right);
   m_talon1.setInverted(false);
   m_talon2.setInverted(false);
+  m_talon5.setInverted(false);
   m_talon3.setInverted(true);
   m_talon4.setInverted(true);
-  m_talon5.setInverted(false);
   m_talon6.setInverted(true);  
 
   m_talon1.setNeutralMode(brake);
@@ -196,6 +198,11 @@ public class Robot extends TimedRobot {
     }
   }
 
+  if(s_ultra2.getRangeInches() < 8){
+    s_ultra2Range = true;
+}else{
+    s_ultra2Range = false;
+}
  if(operateController.getRawAxis(2) > .5){
    //collector runs
    collecting = true;
@@ -206,7 +213,7 @@ public class Robot extends TimedRobot {
  if(operateController.getRawAxis(3) > .5){
    //pid shit
  }else{
-   
+
  }
  
   //SMART DASHBOARD
