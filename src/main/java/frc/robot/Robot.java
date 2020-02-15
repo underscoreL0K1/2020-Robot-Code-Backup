@@ -205,10 +205,10 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
-        //blank inches forward once it is 12 inches before the point that we want to reach we will run the colletor and indexer mechanism in preperation to grab the two balls. 
+         //blank inches forward once it is 12 inches before the point that we want to reach we will run the colletor and indexer mechanism in preperation to grab the two balls. 
         //At this point we will run them until the ultrasonic at the end of indexer is completely full.Then we will stop the indexer and the collector once this value is hit. Once this happens, we will reverse the function and move backwards a set amount of inches so we are at the point that we are at the ideal shooting range.
         //Then we will start a timer. We will use the limelight to align at this point and then we will spin the shooter up to the ideal speed at that distance. 
-        //Once this is complete we will fire all 5 balls (OPTIONAL) at this speed hopefully dead center. After this is complete we will turn to the left so the collector is facing forwards. We will then drive forwards and then spin to the right and then go collect the ones on the end of the rendevous and then  
+        //Once this is complete we will fire all 5 balls (OPTIONAL) at this speed hopefully dead center. After this is complete we will turn to the left so the collector is facing forwards. We will then drive forwards and then spin to the right and then go collect the ones on the end of the rendevous and then 
         if(lwheelSpin < 12 && rwheelSpin < 12) {
         m_myRobot.arcadeDrive(0.2, 0);
         } else if (lwheelSpin == 12 && rwheelSpin == 12) {
@@ -250,6 +250,19 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
     }
 
 
+    if(togglecollector){
+      a_collector.set(true);
+    }else{
+      a_collector.set(false);
+    }
+
+    if(operateController.getRawAxis(3) > .5){
+      //set feeder to feed
+    }else{
+      //set it to 0
+    }
+
+
 
   
   if(collecting){
@@ -263,19 +276,33 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
 
   if(s_ultra2.getRangeInches() < 8){
     s_ultra2Range = true;
-}else{
+  }else{
     s_ultra2Range = false;
-}
- if(operateController.getRawAxis(2) > .5){
+  } 
+ if(operateController.getAButton()){
    //collector runs
    collecting = true;
+ }else if(operateController.getBButton()){
+   //set collector DUMP
  }else{
+   //set collector false
    collecting = false;
+   
  }
+ 
+ if(operateController.getBumper(Hand.kLeft)){
+//set index away from shooter
+ }else if(operateController.getBumper(Hand.kRight)){
+//set index toward shooter
+ }else{
+//set index 0
+ }
+
+
 
  double shooter_speed = 1500.0;
 
- if(operateController.getRawAxis(3) > .5){
+ if(operateController.getRawAxis(2) > .5){
   p_shooter.setReference(shooter_speed, ControlType.kVelocity);
    //pid shit
  }else{
