@@ -194,11 +194,16 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
+        //blank inches forward once it is 12 inches before the point that we want to reach we will run the colletor and indexer mechanism in preperation to grab the two balls. 
+        //At this point we will run them until the ultrasonic at the end of indexer is completely full.Then we will stop the indexer and the collector once this value is hit. Once this happens, we will reverse the function and move backwards a set amount of inches so we are at the point that we are at the ideal shooting range.
+        //Then we will start a timer. We will use the limelight to align at this point and then we will spin the shooter up to the ideal speed at that distance. 
+        //Once this is complete we will fire all 5 balls (OPTIONAL) at this speed hopefully dead center. After this is complete we will turn to the left so the collector is facing forwards. We will then drive forwards and then spin to the right and then go collect the ones on the end of the rendevous and then  
         if(lwheelSpin < 12 && rwheelSpin < 12) {
         m_myRobot.arcadeDrive(0.2, 0);
         } else if (lwheelSpin == 12 && rwheelSpin == 12) {
           m_myRobot.arcadeDrive(0, 0);
         }
+        
         break;
     }
   }
