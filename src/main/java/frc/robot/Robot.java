@@ -14,6 +14,8 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.CANPIDController;
+import com.revrobotics.ControlType;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
@@ -48,13 +50,19 @@ public class Robot extends TimedRobot {
   private static final int shooterCANID_2 = 6;
   
   private double gR = 10.25641025;
+  private double circumference = 6 * Math.PI;
   private boolean collecting = true;
   private boolean s_ultra1Range = false;
   private boolean s_ultra2Range = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
+  private CANPIDController p_shooter;
+  private CANEncoder shootEncoder1;
+  private CANEncoder shootEncoder2;
   Spark m_hood;
   Spark m_feeder; 
+  private double gRCombin = circumference/gR;
+  
 
   private Ultrasonic s_ultra1;
   private Ultrasonic s_ultra2;
@@ -91,6 +99,9 @@ public class Robot extends TimedRobot {
   
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
+  m_shooterright.follow(m_shooterleft);
+  m_shooterright.setInverted(true);
+
 
   s_ultra1 = new Ultrasonic(0, 1);
   s_ultra2 = new Ultrasonic(2, 3);
@@ -98,8 +109,11 @@ public class Robot extends TimedRobot {
   final SpeedControllerGroup left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
   final SpeedControllerGroup right = new SpeedControllerGroup(m_talon3, m_talon4, m_talon6);
 
-  CANEncoder shootEncoder1 = new CANEncoder(m_shooterleft);
-  CANEncoder shootEncoder2 = new CANEncoder(m_shooterright); 
+  shootEncoder1 = new CANEncoder(m_shooterleft);
+  shootEncoder2 = new CANEncoder(m_shooterright); 
+
+  p_shooter = new CANPIDController(m_shooterleft);
+  p_shooter.setFeedbackDevice(shootEncoder1);
 
   m_myRobot = new DifferentialDrive(left, right);
   m_talon1.setInverted(false);
@@ -120,7 +134,8 @@ public class Robot extends TimedRobot {
   m_talon1.setInverted(kInvertType);
   m_talon2.setInverted(kInvertType);
   m_talon5.setInverted(kInvertType);
-  }
+ 
+ }
 
   /**
    * This function is called every robot packet, no matter the mode. Use
@@ -132,6 +147,8 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+  
+    
   }
 
   /**
@@ -148,8 +165,14 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
-    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
+    m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
+    m_talon1.setSelectedSensorPosition(0);
+    m_talon2.setSelectedSensorPosition(0);
+    m_talon3.setSelectedSensorPosition(0);
+    m_talon4.setSelectedSensorPosition(0);
+    m_talon5.setSelectedSensorPosition(0);
+    m_talon6.setSelectedSensorPosition(0);
   }
 
   /**
@@ -157,7 +180,12 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
+    double s_mleft = Math.abs(m_talon1.getSelectedSensorPosition() / 2048);
+    double s_mright = Math.abs(m_talon4.getSelectedSensorPosition()/2048);
+    double lwheelSpin = gRCombin * s_mleft; 
+    double rwheelSpin = gRCombin * s_mright; //how many inches per motor spin 
     
+   
     //Gear Ratio: 10.25641025
     
     switch (m_autoSelected) {
@@ -166,7 +194,11 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
-        // Put default auto code here
+        if(lwheelSpin < 12 && rwheelSpin < 12) {
+        m_myRobot.arcadeDrive(0.2, 0);
+        } else if (lwheelSpin == 12 && rwheelSpin == 12) {
+          m_myRobot.arcadeDrive(0, 0);
+        }
         break;
     }
   }
@@ -190,6 +222,7 @@ public class Robot extends TimedRobot {
   final double angleboth = a1 + a2;
   final double tanValue = Math.tan(angleboth);
   
+  
   if(collecting){
     if(s_ultra1.getRangeInches() < 8){
         //run the index for however long
@@ -211,15 +244,14 @@ public class Robot extends TimedRobot {
    collecting = false;
  }
 
+ double shooter_speed = 1500.0;
+
  if(operateController.getRawAxis(3) > .5){
+  p_shooter.setReference(shooter_speed, ControlType.kVelocity);
    //pid shit
  }else{
-
+  p_shooter.setReference(0, ControlType.kVelocity);
  }
- 
-  //SMART DASHBOARD
-  CANEncoder shootEncoder1 = new CANEncoder(m_shooterleft);
-  CANEncoder shootEncoder2 = new CANEncoder(m_shooterright); 
 
   SmartDashboard.putNumber("distance", heightValue/tanValue); //distance from target*/
   SmartDashboard.putNumber("Rotationleft1", m_talon1.getSelectedSensorPosition()/2048);
@@ -228,15 +260,21 @@ public class Robot extends TimedRobot {
   SmartDashboard.putNumber("Rotationsright2", m_talon4.getSelectedSensorPosition()/2048);
   SmartDashboard.putNumber("Rotationsleft3", m_talon5.getSelectedSensorPosition()/2048);
   SmartDashboard.putNumber("Rotationsright3", m_talon6.getSelectedSensorPosition()/2048);
-  SmartDashboard.putNumber("NeoEncoder1", shootEncoder1.getPosition());
-  SmartDashboard.putNumber("NeoEncoder2", shootEncoder2.getPosition()); 
+  SmartDashboard.putNumber("NeoEncoder1", shootEncoder1.getVelocity());
+  SmartDashboard.putNumber("NeoEncoder2", shootEncoder2.getVelocity()); 
   SmartDashboard.putNumber("NeoEncoder2ConversionFactor", shootEncoder2.getPositionConversionFactor()); 
   SmartDashboard.putNumber("NeoEncoder1ConversionFactor", shootEncoder1.getPositionConversionFactor());
   SmartDashboard.putNumber("ultra1", s_ultra1.getRangeInches());
   SmartDashboard.putBoolean("BallIndex", s_ultra1Range);
   SmartDashboard.putBoolean("Index FULL", s_ultra2Range);
-  }
+
   
+  
+  //double distance = 3; //ft
+//  p_shooter.setReference(distance, ControlType.kPosition);
+
+  }
+  // C/GR = , RPM Encoder, Distacne per rotation of Motor
   @Override
   public void testInit() {
    comp.start();
