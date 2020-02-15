@@ -340,7 +340,23 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
     if(operateController.getYButton()){
       togglecollector = !togglecollector;
     }
-    
+
+
+    if(togglecollector){
+      a_collector.set(true);
+    }else{
+      a_collector.set(false);
+    }
+
+    if(operateController.getRawAxis(3) > .5){
+      //set feeder to feed
+    }else{
+      //set it to 0
+    }
+
+
+
+  
   if(collecting){
     if(s_ultra1.getRangeInches() < 8){
         //run the index for however long
@@ -352,19 +368,33 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
 
   if(s_ultra2.getRangeInches() < 8){
     s_ultra2Range = true;
-}else{
+  }else{
     s_ultra2Range = false;
-}
- if(operateController.getRawAxis(2) > .5){
+  } 
+ if(operateController.getAButton()){
    //collector runs
    collecting = true;
+ }else if(operateController.getBButton()){
+   //set collector DUMP
  }else{
+   //set collector false
    collecting = false;
+   
  }
+ 
+ if(operateController.getBumper(Hand.kLeft)){
+//set index away from shooter
+ }else if(operateController.getBumper(Hand.kRight)){
+//set index toward shooter
+ }else{
+//set index 0
+ }
+
+
 
  double shooter_speed = 1500.0;
 
- if(operateController.getRawAxis(3) > .5){
+ if(operateController.getRawAxis(2) > .5){
   p_shooter.setReference(shooter_speed, ControlType.kVelocity);
    //pid shit
  }else{
