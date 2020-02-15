@@ -18,6 +18,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -47,12 +48,19 @@ public class Robot extends TimedRobot {
   private static final int shooterCANID_1 = 5;
   private static final int shooterCANID_2 = 6;
   
+  CANEncoder shootEncoder1;
+  CANEncoder shootEncoder2;
+
+  private Solenoid a_collector;
+
   private double gR = 10.25641025;
   private boolean collecting = true;
   private boolean s_ultra1Range = false;
   private boolean s_ultra2Range = false;
+  private boolean togglecollector = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
+  
   Spark m_hood;
   Spark m_feeder; 
 
@@ -94,6 +102,10 @@ public class Robot extends TimedRobot {
 
   s_ultra1 = new Ultrasonic(0, 1);
   s_ultra2 = new Ultrasonic(2, 3);
+  
+  a_collector = new Solenoid(0);
+   
+
 
   final SpeedControllerGroup left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
   final SpeedControllerGroup right = new SpeedControllerGroup(m_talon3, m_talon4, m_talon6);
@@ -178,6 +190,11 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
   m_myRobot.arcadeDrive(driveController.getX(Hand.kRight), driveController.getY(Hand.kLeft));
+ 
+  shootEncoder1 = new CANEncoder(m_shooterleft);
+  shootEncoder2 = new CANEncoder(m_shooterright);
+
+
   //to be changed below based on actual robot values
   final double h2 = 90.875; //height of target
   final double h1 = 15.875; //height of limeligt
@@ -190,6 +207,14 @@ public class Robot extends TimedRobot {
   final double angleboth = a1 + a2;
   final double tanValue = Math.tan(angleboth);
   
+shootEncoder1 = new CANEncoder(m_shooterleft);
+  shootEncoder2 = new CANEncoder(m_shooterright);
+    if(operateController.getYButton()){
+      togglecollector = !togglecollector;
+    }
+
+
+
   if(collecting){
     if(s_ultra1.getRangeInches() < 8){
         //run the index for however long
@@ -218,9 +243,7 @@ public class Robot extends TimedRobot {
  }
  
   //SMART DASHBOARD
-  CANEncoder shootEncoder1 = new CANEncoder(m_shooterleft);
-  CANEncoder shootEncoder2 = new CANEncoder(m_shooterright); 
-
+  
   SmartDashboard.putNumber("distance", heightValue/tanValue); //distance from target*/
   SmartDashboard.putNumber("Rotationleft1", m_talon1.getSelectedSensorPosition()/2048);
   SmartDashboard.putNumber("Rotationsleft2", m_talon2.getSelectedSensorPosition()/2048);
