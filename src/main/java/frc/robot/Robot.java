@@ -24,9 +24,11 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -63,6 +65,7 @@ public class Robot extends TimedRobot {
   private boolean togglecollector = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
+  private Gyro s_roboGyro;
   
   private CANPIDController p_shooter;
 
@@ -70,6 +73,8 @@ public class Robot extends TimedRobot {
   Spark m_feeder; 
   private double gRCombin = circumference/gR;
   
+  private Timer t_timer;
+  private Timer t_timer2;
 
   private Ultrasonic s_ultra1;
   private Ultrasonic s_ultra2;
@@ -109,9 +114,41 @@ public class Robot extends TimedRobot {
   m_shooterright.follow(m_shooterleft);
   m_shooterright.setInverted(true);
 
-
+ 
   s_ultra1 = new Ultrasonic(0, 1);
   s_ultra2 = new Ultrasonic(2, 3);
+  s_roboGyro = new Gyro(){
+  
+    @Override
+    public void close() throws Exception {
+      // TODO Auto-generated method stub
+      
+    }
+  
+    @Override
+    public void reset() {
+      // TODO Auto-generated method stub
+      
+    }
+  
+    @Override
+    public double getRate() {
+      // TODO Auto-generated method stub
+      return 0;
+    }
+  
+    @Override
+    public double getAngle() {
+      // TODO Auto-generated method stub
+      return 0;
+    }
+  
+    @Override
+    public void calibrate() {
+      // TODO Auto-generated method stub
+      
+    }
+  };
   
   a_collector = new Solenoid(0);
    
@@ -125,6 +162,7 @@ public class Robot extends TimedRobot {
 
   p_shooter = new CANPIDController(m_shooterleft);
   p_shooter.setFeedbackDevice(shootEncoder1);
+  
 
   m_myRobot = new DifferentialDrive(left, right);
   m_talon1.setInverted(false);
@@ -145,6 +183,9 @@ public class Robot extends TimedRobot {
   m_talon1.setInverted(kInvertType);
   m_talon2.setInverted(kInvertType);
   m_talon5.setInverted(kInvertType);
+  t_timer = new Timer();
+  t_timer2 = new Timer(); 
+  
  
  }
 
@@ -184,6 +225,10 @@ public class Robot extends TimedRobot {
     m_talon4.setSelectedSensorPosition(0);
     m_talon5.setSelectedSensorPosition(0);
     m_talon6.setSelectedSensorPosition(0);
+    s_roboGyro.reset();
+    t_timer.reset(); 
+    t_timer.start();
+
   }
 
   /**
@@ -195,29 +240,73 @@ public class Robot extends TimedRobot {
     double s_mright = Math.abs(m_talon4.getSelectedSensorPosition()/2048);
     double lwheelSpin = gRCombin * s_mleft; 
     double rwheelSpin = gRCombin * s_mright; //how many inches per motor spin 
+    int state = 0;
+    
+   
     
    
     //Gear Ratio: 10.25641025
     
     switch (m_autoSelected) {
       case kCustomAuto:
-        // Put custom auto code here
+       
         break;
       case kDefaultAuto:
       default:
-        //[      ] inches forward once it is 12 inches before the point that we want to reach we will run the colletor and indexer mechanism in preperation to grab the two balls. 
+      if(state == 0){
+        //run shooter
+        //align with target
+        if(s_roboGyro.getAngle() < -20){
+          //stop drive
+          state = 1;
+        }
+      }
+     if((state == 1)) {
+
+     //run feeder and index == shoots + limeligaht
+        
+        if(t_timer.get() > 4){
+          t_timer.stop();
+          state = 2;
+        }
+     } else if (state == 2){
+       //set motors to turn right
+       if(s_roboGyro.getAngle()  > 0){
+        //stop drive motrs turn
+        //drive back and collect
+        //index when ultrasonic
+        // as soon as encoders hit their mark, 
+                                              state = 3;
+       }else if (state == 3) {
+        //move backwards with encoder values to shooting position
+        //go to state 4 
+       } else if (state == 4) { 
+         //shoot timers and indexer stuff + limelight  t_timer_2 
+         //TELEOP
+      }
+     }
+      
+      
+      //[      ] inches forward once it is 12 inches before the point that we want to reach we will run the colletor and indexer mechanism in preperation to grab the two balls. 
         //At this point we will run them until the ultrasonic at the end of indexer is completely full.Then we will stop the indexer and the collector once this value is hit. Once this happens, we will reverse the function and move backwards a set amount of inches so we are at the point that we are at the ideal shooting range.
         //Then we will start a timer. We will use the limelight to align at this point and then we will spin the shooter up to the ideal speed at that distance. 
         //Once this is complete we will fire all 5 balls. (OPTIONAL) at this speed hopefully dead center. After this is complete we will turn to the left so the collector is facing forwards. We will then drive forwards and then spin to the right and then go collect the ones on the end of the rendevous and then. 
 
         //Auto 2
         //Already Lined at start. Rev shoot and feed and fire. straighten, backwards while collecting and indexing into. Then stop when the last one hits the back but this would be tough but we have to regulte when the actual things are moving. When we get to it. 
+  /*if ((l_wheelspin.get() > 0.5) && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)){
+    double kP_turn; 
+    double min_command;
+    double error = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+    double steering_change = 0;    
+    kP_turn = -.013; 
+    min_command = .08;
         if(lwheelSpin < 12 && rwheelSpin < 12) {
         m_myRobot.arcadeDrive(0.2, 0);
         } else if (lwheelSpin == 12 && rwheelSpin == 12) {
           m_myRobot.arcadeDrive(0, 0);
         }
-        
+      }*/
         break;
     }
   }
@@ -251,10 +340,7 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
     if(operateController.getYButton()){
       togglecollector = !togglecollector;
     }
-
-
-
-  
+    
   if(collecting){
     if(s_ultra1.getRangeInches() < 8){
         //run the index for however long
@@ -294,16 +380,15 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
   SmartDashboard.putNumber("Rotationsright3", m_talon6.getSelectedSensorPosition()/2048);
   SmartDashboard.putNumber("NeoEncoder1", shootEncoder1.getVelocity());
   SmartDashboard.putNumber("NeoEncoder2", shootEncoder2.getVelocity()); 
-  SmartDashboard.putNumber("NeoEncoder2ConversionFactor", shootEncoder2.getPositionConversionFactor()); 
-  SmartDashboard.putNumber("NeoEncoder1ConversionFactor", shootEncoder1.getPositionConversionFactor());
   SmartDashboard.putNumber("ultra1", s_ultra1.getRangeInches());
   SmartDashboard.putBoolean("BallIndex", s_ultra1Range);
   SmartDashboard.putBoolean("Index FULL", s_ultra2Range);
+  SmartDashboard.putNumber("Gyro Angle", s_roboGyro.getAngle()); 
 
   
   
   //double distance = 3; //ft
-//  p_shooter.setReference(distance, ControlType.kPosition);
+//p_shooter.setReference(distance, ControlType.kPosition);
 
   }
   // C/GR = , RPM Encoder, Distacne per rotation of Motor
