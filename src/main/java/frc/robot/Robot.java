@@ -7,7 +7,6 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
@@ -52,8 +51,8 @@ public class Robot extends TimedRobot {
   private static final int shooterCANID_1 = 5;
   private static final int shooterCANID_2 = 6;
   
-  CANEncoder shootEncoder1;
-  CANEncoder shootEncoder2;
+  private CANEncoder shootEncoder1;
+  private CANEncoder shootEncoder2;
 
   private Solenoid a_collector;
 
@@ -68,6 +67,8 @@ public class Robot extends TimedRobot {
   private Gyro s_roboGyro;
   
   private CANPIDController p_shooter;
+  public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM, maxVel, minVel, maxAcc, allowedErr;
+  
 
   Spark m_hood;
   Spark m_feeder; 
@@ -152,6 +153,9 @@ public class Robot extends TimedRobot {
   
   a_collector = new Solenoid(0);
    
+  p_shooter = m_shooterleft.getPIDController();
+  shootEncoder1 = m_shooterleft.getEncoder();
+
 
 
   final SpeedControllerGroup left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
@@ -185,8 +189,53 @@ public class Robot extends TimedRobot {
   m_talon5.setInverted(kInvertType);
   t_timer = new Timer();
   t_timer2 = new Timer(); 
-  
+  //PID!!!
+  kP = 5e-5; 
+  kI = 1e-6;
+  kD = 0; 
+  kIz = 0; 
+  kFF = 0.000156; 
+  kMaxOutput = 1; 
+  kMinOutput = 0;
+  maxRPM = 5700;
+
+  // Smart Motion Coefficients
+  maxVel = 2000; // rpm
+  maxAcc = 1500;
+
+  p_shooter.setP(kP);
+  p_shooter.setI(kI);
+  p_shooter.setD(kD);
+    p_shooter.setIZone(kIz);
+    p_shooter.setFF(kFF);
+    p_shooter.setOutputRange(kMinOutput, kMaxOutput);
  
+  int smartMotionSlot = 0;
+  p_shooter.setSmartMotionMaxVelocity(maxVel, smartMotionSlot);
+  p_shooter.setSmartMotionMinOutputVelocity(minVel, smartMotionSlot);
+  p_shooter.setSmartMotionMaxAccel(maxAcc, smartMotionSlot);
+  p_shooter.setSmartMotionAllowedClosedLoopError(allowedErr, smartMotionSlot);
+
+  // display PID coefficients on SmartDashboard
+  SmartDashboard.putNumber("P Gain", kP);
+  SmartDashboard.putNumber("I Gain", kI);
+  SmartDashboard.putNumber("D Gain", kD);
+  SmartDashboard.putNumber("I Zone", kIz);
+  SmartDashboard.putNumber("Feed Forward", kFF);
+  SmartDashboard.putNumber("Max Output", kMaxOutput);
+  SmartDashboard.putNumber("Min Output", kMinOutput);
+
+  // display Smart Motion coefficients
+  SmartDashboard.putNumber("Max Velocity", maxVel);
+  SmartDashboard.putNumber("Min Velocity", minVel);
+  SmartDashboard.putNumber("Max Acceleration", maxAcc);
+  SmartDashboard.putNumber("Allowed Closed Loop Error", allowedErr);
+  SmartDashboard.putNumber("Set Position", 0);
+  SmartDashboard.putNumber("Set Velocity", 0);
+
+   // button to toggle between velocity and smart motion modes
+   SmartDashboard.putBoolean("Mode", true);
+
  }
 
   /**
@@ -282,7 +331,7 @@ public class Robot extends TimedRobot {
         //go to state 4 
        } else if (state == 4) { 
          //shoot timers and indexer stuff + limelight  t_timer_2 
-         //TELEOP
+         //TELEOP!!!
       }
      }
       
@@ -334,9 +383,7 @@ public class Robot extends TimedRobot {
   
   final double angleboth = a1 + a2;
   final double tanValue = Math.tan(angleboth);
-  
-shootEncoder1 = new CANEncoder(m_shooterleft);
-  shootEncoder2 = new CANEncoder(m_shooterright);
+
     if(operateController.getYButton()){
       togglecollector = !togglecollector;
     }
@@ -392,13 +439,13 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
 
 
 
- double shooter_speed = 1500.0;
+ //double shooter_speed = 1500.0;
 
  if(operateController.getRawAxis(2) > .5){
-  p_shooter.setReference(shooter_speed, ControlType.kVelocity);
+  //p_shooter.setReference(shooter_speed, ControlType.kVelocity);
    //pid shit
  }else{
-  p_shooter.setReference(0, ControlType.kVelocity);
+ // p_shooter.setReference(0, ControlType.kVelocity);
  }
  //smart Dashboard
   SmartDashboard.putNumber("distance", heightValue/tanValue); //distance from target*/
@@ -414,13 +461,60 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
   SmartDashboard.putBoolean("BallIndex", s_ultra1Range);
   SmartDashboard.putBoolean("Index FULL", s_ultra2Range);
   SmartDashboard.putNumber("Gyro Angle", s_roboGyro.getAngle()); 
+  // read PID coefficients from SmartDashboard
+  double p = SmartDashboard.getNumber("P Gain", 0);
+  double i = SmartDashboard.getNumber("I Gain", 0);
+  double d = SmartDashboard.getNumber("D Gain", 0);
+  double iz = SmartDashboard.getNumber("I Zone", 0);
+  double ff = SmartDashboard.getNumber("Feed Forward", 0);
+  double max = SmartDashboard.getNumber("Max Output", 0);
+  double min = SmartDashboard.getNumber("Min Output", 0);
+  double maxV = SmartDashboard.getNumber("Max Velocity", 0);
+  double minV = SmartDashboard.getNumber("Min Velocity", 0);
+  double maxA = SmartDashboard.getNumber("Max Acceleration", 0);
+  double allE = SmartDashboard.getNumber("Allowed Closed Loop Error", 0);
+  
+  
+ // if PID coefficients on SmartDashboard have changed, write new values to controller
+ if((p != kP)) { p_shooter.setP(p); kP = p; }
+ if((i != kI)) { p_shooter.setI(i); kI = i; }
+ if((d != kD)) { p_shooter.setD(d); kD = d; }
+ if((iz != kIz)) { p_shooter.setIZone(iz); kIz = iz; }
+ if((ff != kFF)) { p_shooter.setFF(ff); kFF = ff; }
+ if((max != kMaxOutput) || (min != kMinOutput)) { 
+   p_shooter.setOutputRange(min, max); 
+   kMinOutput = min; kMaxOutput = max; 
+ }
+ if((maxV != maxVel)) { p_shooter.setSmartMotionMaxVelocity(maxV,0); maxVel = maxV; }
+ if((minV != minVel)) { p_shooter.setSmartMotionMinOutputVelocity(minV,0); minVel = minV; }
+ if((maxA != maxAcc)) { p_shooter.setSmartMotionMaxAccel(maxA,0); maxAcc = maxA; }
+ if((allE != allowedErr)) { p_shooter.setSmartMotionAllowedClosedLoopError(allE,0); allowedErr = allE; }
 
-  
-  
+ double setPoint, processVariable;
+    boolean mode = SmartDashboard.getBoolean("Mode", false);
+    if(mode) {
+      setPoint = SmartDashboard.getNumber("Set Velocity", 0);
+      p_shooter.setReference(setPoint, ControlType.kVelocity);
+      processVariable = shootEncoder1.getVelocity();
+    } else {
+      setPoint = SmartDashboard.getNumber("Set Position", 0);
+      /**
+       * As with other PID modes, Smart Motion is set by calling the
+       * setReference method on an existing pid object and setting
+       * the control type to kSmartMotion
+       */
+      p_shooter.setReference(setPoint, ControlType.kSmartMotion);
+      processVariable = shootEncoder1.getPosition();
+    }
+    
+    SmartDashboard.putNumber("SetPoint", setPoint);
+    SmartDashboard.putNumber("Process Variable", processVariable);
+    SmartDashboard.putNumber("Output", m_shooterleft.getAppliedOutput());
+  }
   //double distance = 3; //ft
 //p_shooter.setReference(distance, ControlType.kPosition);
 
-  }
+  
   // C/GR = , RPM Encoder, Distacne per rotation of Motor
   @Override
   public void testInit() {
