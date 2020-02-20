@@ -57,6 +57,8 @@ public class Robot extends TimedRobot {
 
   private Solenoid a_collector;
 
+  private int t_indexreset;
+
   private double gR = 10.25641025;
   private double circumference = 6 * Math.PI;
   private boolean collecting = true;
@@ -409,19 +411,24 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
 
 
   
-  if(collecting){
-    if(s_ultra1.getRangeInches() < 8){
+  //if(collecting){
+    if(s_ultra1.getRangeInches() < 10){
         //run the index for however long
         s_ultra1Range = true;
     }else{
-        s_ultra1Range = false;
+       s_ultra1Range = false;
+       t_indexreset = 0;
     }
-  }
+ // }
 
 
   if(s_ultra1Range){
-    ballcount++;
-    s_ultra1Range = false;
+    if(t_indexreset == 1){
+      ballcount++;
+      t_indexreset++;
+    }else{
+      t_indexreset++;
+    }
   }
 
   if(s_ultra2.getRangeInches() < 8){
@@ -473,6 +480,7 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
   SmartDashboard.putBoolean("Index FULL", s_ultra2Range);
   SmartDashboard.putNumber("Gyro Angle", s_roboGyro.getAngle()); 
   SmartDashboard.putNumber("Ballcount", ballcount);
+  SmartDashboard.putNumber("Index reset Timer", t_indexreset);
     // read PID coefficients from SmartDashboard
     double p = SmartDashboard.getNumber("P Gain", 0);
     double i = SmartDashboard.getNumber("I Gain", 0);
