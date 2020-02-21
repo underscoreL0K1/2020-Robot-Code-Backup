@@ -11,6 +11,8 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -51,6 +53,12 @@ public class Robot extends TimedRobot {
 
   private static final int shooterCANID_1 = 5;
   private static final int shooterCANID_2 = 6;
+  private static final int collectCANID = 0;
+  private static final int indexerCANID = 0;
+  private static final int feederCANID = 0;
+  private static final int winchCANID_1 = 0;
+  private static final int winchCANID_2 = 0;
+
   
   private CANEncoder shootEncoder1;
   private CANEncoder shootEncoder2;
@@ -67,10 +75,12 @@ public class Robot extends TimedRobot {
   private boolean togglecollector = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
+  private WPI_TalonSRX m_collector;
+  private WPI_VictorSPX m_indexer;
   private Gyro s_roboGyro;
   
   private CANPIDController p_shooter;
-    public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM, maxVel, minVel, maxAcc, allowedErr;
+  public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM, maxVel, minVel, maxAcc, allowedErr;
 
 
   Spark m_hood;
@@ -114,6 +124,9 @@ public class Robot extends TimedRobot {
   m_talon4 = new WPI_TalonFX(4);
   m_talon5 = new WPI_TalonFX(5);
   m_talon6 = new WPI_TalonFX(6);
+
+  m_collector = new WPI_TalonSRX(collectCANID);
+  m_indexer = new WPI_VictorSPX(indexerCANID);
   
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
@@ -398,6 +411,7 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
 
     if(togglecollector){
       a_collector.set(true);
+      
     }else{
       a_collector.set(false);
     }
@@ -437,22 +451,22 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
     s_ultra2Range = false;
   } 
  if(operateController.getAButton()){
-   //collector runs
+  m_collector.set(0.5);
    collecting = true;
  }else if(operateController.getBButton()){
-   //set collector DUMP
+  m_collector.set(-0.5);
  }else{
-   //set collector false
+   m_collector.set(0);
    collecting = false;
    
  }
  
  if(operateController.getBumper(Hand.kLeft)){
-//set index away from shooter
+m_indexer.set(0.5);
  }else if(operateController.getBumper(Hand.kRight)){
-//set index toward shooter
+m_indexer.set(-0.5);
  }else{
-//set index 0
+m_indexer.set(0);
  }
 
 
@@ -510,7 +524,7 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
    if((maxA != maxAcc)) { p_shooter.setSmartMotionMaxAccel(maxA,0); maxAcc = maxA; }
    if((allE != allowedErr)) { p_shooter.setSmartMotionAllowedClosedLoopError(allE,0); allowedErr = allE; }
   
-   double setPoint, processVariable;
+    double setPoint, processVariable;
       boolean mode = SmartDashboard.getBoolean("Mode", false);
       if(mode) {
         setPoint = SmartDashboard.getNumber("Set Velocity", 0);
