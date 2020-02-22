@@ -50,7 +50,7 @@ public class Robot extends TimedRobot {
  
   public NeutralMode brake = NeutralMode.Brake;
 
-  private static final int shooterCANID_1 = 5;
+  private static final int shooterCANID_1 = 1;
   private static final int shooterCANID_2 = 6;
   private static final int collectCANID = 9;
   private static final int indexerCANID = 10;
@@ -76,8 +76,8 @@ public class Robot extends TimedRobot {
   private boolean togglecollector = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
-  private WPI_TalonSRX m_collector;
-  private WPI_VictorSPX m_indexer;
+  private WPI_VictorSPX m_collector;
+  private WPI_TalonSRX m_indexer;
   private Gyro s_roboGyro;
   
   private CANPIDController p_shooter;
@@ -127,9 +127,11 @@ double limeTarget;
   m_talon5 = new WPI_TalonFX(5);
   m_talon6 = new WPI_TalonFX(6);
 
-  m_collector = new WPI_TalonSRX(collectCANID);
-  m_indexer = new WPI_VictorSPX(indexerCANID);
+  m_collector = new WPI_VictorSPX(collectCANID);
+  m_indexer = new WPI_TalonSRX(indexerCANID);
   
+  
+
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
   m_shooterright.follow(m_shooterleft);
@@ -436,7 +438,7 @@ limeHasTarget = false;
     }
 
     if(operateController.getRawAxis(3) > .5){
-      //set feeder to feed
+      m_feeder
     }else{
       //set it to 0
     }
@@ -498,15 +500,13 @@ if(driveController.getRawAxis(3) > 0.7) {
 
     
 if(operateController.getAButton()){
-  m_collector.set(0.5);
-} else if (operateController.getAButtonReleased()){
+  m_collector.set(1);
+} else if(operateController.getBButton()) {
+  m_collector.set(-1);
+}else{
   m_collector.set(0);
 }
-if(operateController.getBButton()) {
-  m_collector.set(-0.5);
-}else if (operateController.getBButtonReleased()){
-  m_collector.set(0);
-}
+
  
  if(operateController.getBumper(Hand.kLeft)){
 m_indexer.set(0.5);
