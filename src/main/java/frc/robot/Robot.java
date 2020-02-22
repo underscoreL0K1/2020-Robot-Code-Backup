@@ -50,8 +50,8 @@ public class Robot extends TimedRobot {
  
   public NeutralMode brake = NeutralMode.Brake;
 
-  private static final int shooterCANID_1 = 1;
-  private static final int shooterCANID_2 = 6;
+  private static final int shooterCANID_1 = 11;
+  private static final int shooterCANID_2 = 14;
   private static final int collectCANID = 9;
   private static final int indexerCANID = 10;
   private static final int feederCANID = 8;
@@ -134,8 +134,8 @@ double limeTarget;
 
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
-  m_shooterright.follow(m_shooterleft);
-  m_shooterright.setInverted(true);
+  m_shooterright.follow(m_shooterleft, true);
+ 
 
  
   s_ultra1 = new Ultrasonic(0, 1);
@@ -402,6 +402,7 @@ limeHasTarget = false;
   @Override
   public void teleopInit() {
     s_ultra1.setAutomaticMode(true);
+    
   }
 
   @Override
@@ -438,7 +439,7 @@ limeHasTarget = false;
     }
 
     if(operateController.getRawAxis(3) > .5){
-      m_feeder
+     
     }else{
       //set it to 0
     }
@@ -519,13 +520,6 @@ m_indexer.set(0);
 
 
  //double shooter_speed = 1500.0;
-
- if(operateController.getRawAxis(2) > .5){
-  //p_shooter.setReference(shooter_speed, ControlType.kVelocity);
-   //pid shit
- }else{
-  // p_shooter.setReference(0, ControlType.kVelocity);
- }
  //smart Dashboard
   SmartDashboard.putNumber("distance", heightValue/tanValue); //distance from target*/
   SmartDashboard.putNumber("Rotationleft1", m_talon1.getSelectedSensorPosition()/2048);
@@ -572,22 +566,22 @@ m_indexer.set(0);
    if((allE != allowedErr)) { p_shooter.setSmartMotionAllowedClosedLoopError(allE,0); allowedErr = allE; }
   
     double setPoint, processVariable;
-      boolean mode = SmartDashboard.getBoolean("Mode", false);
-      if(mode) {
-        setPoint = SmartDashboard.getNumber("Set Velocity", 0);
-        p_shooter.setReference(setPoint, ControlType.kVelocity);
-        processVariable = shootEncoder1.getVelocity();
-      } else {
+    setPoint = 0;
+      
+      if(operateController.getRawAxis(2) > 0.5) {
+        setPoint = SmartDashboard.getNumber("Set Velocity", 2000);
+      }
+        /*else {
         setPoint = SmartDashboard.getNumber("Set Position", 0);
         /**
          * As with other PID modes, Smart Motion is set by calling the
          * setReference method on an existing pid object and setting
          * the control type to kSmartMotion
-         */
-        p_shooter.setReference(setPoint, ControlType.kSmartMotion);
+          p_shooter.setReference(setPoint, ControlType.kSmartMotion);
         processVariable = shootEncoder1.getPosition();
-      }
-      
+      }*/
+      p_shooter.setReference(setPoint, ControlType.kVelocity);
+      processVariable = shootEncoder1.getVelocity();
       SmartDashboard.putNumber("SetPoint", setPoint);
       SmartDashboard.putNumber("Process Variable", processVariable);
       SmartDashboard.putNumber("Output", m_shooterleft.getAppliedOutput());
