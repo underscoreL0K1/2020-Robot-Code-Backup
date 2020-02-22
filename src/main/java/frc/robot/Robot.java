@@ -76,6 +76,8 @@ public class Robot extends TimedRobot {
   private boolean togglecollector = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
+  private WPI_VictorSPX m_feeder; 
+  private WPI_VictorSPX m_hood;
   private WPI_VictorSPX m_collector;
   private WPI_TalonSRX m_indexer;
   private Gyro s_roboGyro;
@@ -84,8 +86,8 @@ public class Robot extends TimedRobot {
   public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM, maxVel, minVel, maxAcc, allowedErr;
 
 
-  Spark m_hood;
-  Spark m_feeder; 
+
+  
   private double gRCombin = circumference/gR;
   
   private Timer t_timer;
@@ -134,12 +136,15 @@ double limeTarget;
 
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
+  m_shooterleft.setInverted(true);
   m_shooterright.follow(m_shooterleft, true);
+  m_shooterleft.setInverted(true);
  
 
- 
-  s_ultra1 = new Ultrasonic(0, 1);
-  s_ultra2 = new Ultrasonic(2, 3);
+  m_feeder = new WPI_VictorSPX(feederCANID);
+  m_hood = new WPI_VictorSPX(hoodCANID); 
+  s_ultra1 = new Ultrasonic(8, 9);
+  s_ultra2 = new Ultrasonic(6, 7);
   s_roboGyro = new Gyro(){
   
     @Override
@@ -189,8 +194,10 @@ double limeTarget;
   p_shooter = new CANPIDController(m_shooterleft);
   p_shooter.setFeedbackDevice(shootEncoder1);
   
+  
 
   m_myRobot = new DifferentialDrive(left, right);
+  
   m_talon1.setInverted(false);
   m_talon2.setInverted(false);
   m_talon5.setInverted(false);
@@ -253,7 +260,7 @@ double limeTarget;
    SmartDashboard.putNumber("Max Acceleration", maxAcc);
    SmartDashboard.putNumber("Allowed Closed Loop Error", allowedErr);
    SmartDashboard.putNumber("Set Position", 0);
-   SmartDashboard.putNumber("Set Velocity", 0);
+   SmartDashboard.putNumber("Set Velocity", 4000);
  
     // button to toggle between velocity and smart motion modes
     SmartDashboard.putBoolean("Mode", true);
@@ -287,7 +294,7 @@ double limeTarget;
    */
 
    public void limelightTracking(){
-    double steer = 0.1; 
+    double steer = 0.06; 
     double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
     double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
 if (tv < 1) {
@@ -297,7 +304,7 @@ limeHasTarget = false;
 }
 
 
-    double limetarget = tx * steer; 
+    double limeTarget = tx * steer; 
 
 
 
@@ -438,11 +445,14 @@ limeHasTarget = false;
       a_collector.set(false);
     }
 
-    if(operateController.getRawAxis(3) > .5){
-     
+    if(operateController.getRawAxis(3) > 0.5){
+    m_feeder.set(-0.7);
+    ballcount = 0;
     }else{
-      //set it to 0
+    m_feeder.set(0);
     }
+
+    m_hood.set(operateController.getRawAxis(1)*0.5);
 
 
 
@@ -486,10 +496,12 @@ limeHasTarget = false;
 limelightTracking();
 double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
 double hordis = Math.abs(tx);
+double steer = 0.06; 
+double limeTarget = tx * steer; 
 if(driveController.getRawAxis(3) > 0.7) {
     if(limeHasTarget = true){ //has a target
       if (hordis > 1){
-        m_myRobot.arcadeDrive(0, limeTarget);
+        m_myRobot.arcadeDrive(limeTarget, 0);
       }else if(hordis < 1) {
         m_myRobot.arcadeDrive(0, 0);
       }
@@ -510,12 +522,15 @@ if(operateController.getAButton()){
 
  
  if(operateController.getBumper(Hand.kLeft)){
-m_indexer.set(0.5);
+m_indexer.set(-0.3);
+m_collector.set(-1);
  }else if(operateController.getBumper(Hand.kRight)){
-m_indexer.set(-0.5);
+m_indexer.set(0.3);
+m_collector.set(1);
  }else{
 m_indexer.set(0);
  }
+ 
 
 
 
