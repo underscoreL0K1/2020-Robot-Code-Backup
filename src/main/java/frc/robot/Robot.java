@@ -53,11 +53,13 @@ public class Robot extends TimedRobot {
 
   private static final int shooterCANID_1 = 5;
   private static final int shooterCANID_2 = 6;
-  private static final int collectCANID = 0;
-  private static final int indexerCANID = 0;
-  private static final int feederCANID = 0;
-  private static final int winchCANID_1 = 0;
+  private static final int collectCANID = 9;
+  private static final int indexerCANID = 10;
+  private static final int feederCANID = 8;
+  private static final int winchCANID_1 = 0;  //Neos
   private static final int winchCANID_2 = 0;
+  private static final int hoodCANID = 7;
+
 
   
   private CANEncoder shootEncoder1;
