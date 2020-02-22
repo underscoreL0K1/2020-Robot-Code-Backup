@@ -7,21 +7,20 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANEncoder;
+import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.CANPIDController;
 import com.revrobotics.ControlType;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
@@ -173,7 +172,7 @@ public class Robot extends TimedRobot {
   
   a_collector = new Solenoid(0);
 
-   p_shooter = m_shooterleft.getPIDController();
+  p_shooter = m_shooterleft.getPIDController();
   shootEncoder1 = m_shooterleft.getEncoder();
 
 
@@ -386,7 +385,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-  m_myRobot.arcadeDrive(driveController.getX(Hand.kRight), driveController.getY(Hand.kLeft));
  
   shootEncoder1 = new CANEncoder(m_shooterleft);
   shootEncoder2 = new CANEncoder(m_shooterright);
@@ -404,7 +402,7 @@ public class Robot extends TimedRobot {
   final double angleboth = a1 + a2;
   final double tanValue = Math.tan(angleboth);
   
-shootEncoder1 = new CANEncoder(m_shooterleft);
+  shootEncoder1 = new CANEncoder(m_shooterleft);
   shootEncoder2 = new CANEncoder(m_shooterright);
     if(operateController.getYButton()){
       togglecollector = !togglecollector;
@@ -452,7 +450,7 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
   }else{
     s_ultra2Range = false;
   } 
- if(operateController.getAButton()){
+ /*if(operateController.getAButton()){
   m_collector.set(0.5);
    collecting = true;
  }else if(operateController.getBButton()){
@@ -462,6 +460,35 @@ shootEncoder1 = new CANEncoder(m_shooterleft);
    collecting = false;
    
  }
+*/
+    
+  if(driveController.getRawAxis(3) > 0.7) {
+    double steer = 0.04; 
+    double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+    double limetarget = tx * steer; 
+    double hordis = Math.abs(tx);
+    if(NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0) >= 1){
+      if (hordis >= 1){
+        m_myRobot.arcadeDrive(0, limetarget);
+      }
+
+    }
+  }else{
+    m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
+
+  }
+
+    
+if(operateController.getAButton()){
+  m_collector.set(0.5);
+} else if (operateController.getAButtonReleased()){
+  m_collector.set(0);
+}
+if(operateController.getBButton()) {
+  m_collector.set(-0.5);
+}else if (operateController.getBButtonReleased()){
+  m_collector.set(0);
+}
  
  if(operateController.getBumper(Hand.kLeft)){
 m_indexer.set(0.5);
@@ -547,6 +574,7 @@ m_indexer.set(0);
       SmartDashboard.putNumber("Process Variable", processVariable);
       SmartDashboard.putNumber("Output", m_shooterleft.getAppliedOutput());
     }
+  
   //double distance = 3; //ft
 //p_shooter.setReference(distance, ControlType.kPosition);
 
