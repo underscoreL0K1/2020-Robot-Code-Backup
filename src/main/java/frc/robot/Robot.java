@@ -64,6 +64,8 @@ public class Robot extends TimedRobot {
   private CANEncoder shootEncoder1;
   private CANEncoder shootEncoder2;
 
+
+
   private Solenoid a_collector;
 
   private int t_indexreset;
@@ -132,13 +134,10 @@ double limeTarget;
   m_collector = new WPI_VictorSPX(collectCANID);
   m_indexer = new WPI_TalonSRX(indexerCANID);
   
-  
-
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
   m_shooterleft.setInverted(true);
   m_shooterright.follow(m_shooterleft, true);
-  m_shooterleft.setInverted(true);
  
 
   m_feeder = new WPI_VictorSPX(feederCANID);
@@ -321,6 +320,7 @@ limeHasTarget = false;
     m_talon4.setSelectedSensorPosition(0);
     m_talon5.setSelectedSensorPosition(0);
     m_talon6.setSelectedSensorPosition(0);
+    m_feeder.setSelectedSensorPosition(0);
     s_roboGyro.reset();
     t_timer.reset(); 
     t_timer.start();
@@ -537,12 +537,7 @@ m_indexer.set(0);
  //double shooter_speed = 1500.0;
  //smart Dashboard
   SmartDashboard.putNumber("distance", heightValue/tanValue); //distance from target*/
-  SmartDashboard.putNumber("Rotationleft1", m_talon1.getSelectedSensorPosition()/2048);
-  SmartDashboard.putNumber("Rotationsleft2", m_talon2.getSelectedSensorPosition()/2048);
-  SmartDashboard.putNumber("Rotationsright1", m_talon3.getSelectedSensorPosition()/2048);
-  SmartDashboard.putNumber("Rotationsright2", m_talon4.getSelectedSensorPosition()/2048);
-  SmartDashboard.putNumber("Rotationsleft3", m_talon5.getSelectedSensorPosition()/2048);
-  SmartDashboard.putNumber("Rotationsright3", m_talon6.getSelectedSensorPosition()/2048);
+  SmartDashboard.putNumber("index encoder", m_indexer.getSelectedSensorPosition());
   SmartDashboard.putNumber("NeoEncoder1", shootEncoder1.getVelocity());
   SmartDashboard.putNumber("NeoEncoder2", shootEncoder2.getVelocity()); 
   SmartDashboard.putNumber("ultra1", s_ultra1.getRangeInches());
