@@ -108,7 +108,8 @@ public class Robot extends TimedRobot {
   XboxController operateController = new XboxController(1);
   Compressor comp = new Compressor(0);
   
-
+Boolean limeHasTarget = false;
+double limeTarget;
   /**
    * This function is run when the robot is first started up and should be
    * used for any initialization code.
@@ -282,6 +283,24 @@ public class Robot extends TimedRobot {
    * the switch structure below with additional strings. If using the
    * SendableChooser make sure to add them to the chooser code above as well.
    */
+
+   public void limelightTracking(){
+    double steer = 0.1; 
+    double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+    double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
+if (tv < 1) {
+limeHasTarget = false;
+} else {
+  limeHasTarget = true;
+}
+
+
+    double limetarget = tx * steer; 
+
+
+
+   }
+
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
@@ -461,16 +480,14 @@ public class Robot extends TimedRobot {
    
  }
 */
-    
-  if(driveController.getRawAxis(3) > 0.7) {
-    double steer = 0.04; 
-    double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
-    double limetarget = tx * steer; 
-    double hordis = Math.abs(tx);
-    if(NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1){ //has a target
+limelightTracking();
+double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+double hordis = Math.abs(tx);
+if(driveController.getRawAxis(3) > 0.7) {
+    if(limeHasTarget = true){ //has a target
       if (hordis > 1){
-        m_myRobot.arcadeDrive(0, limetarget);
-      }else {
+        m_myRobot.arcadeDrive(0, limeTarget);
+      }else if(hordis < 1) {
         m_myRobot.arcadeDrive(0, 0);
       }
     }
