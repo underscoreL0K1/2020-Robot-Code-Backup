@@ -469,11 +469,12 @@ public class Robot extends TimedRobot {
     double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
     double limetarget = tx * steer; 
     double hordis = Math.abs(tx);
-    if(NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0) >= 1){
-      if (hordis >= 1){
+    if(NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1){ //has a target
+      if (hordis > 1){
         m_myRobot.arcadeDrive(0, limetarget);
+      }else {
+        m_myRobot.arcadeDrive(0, 0);
       }
-
     }
   }else{
     m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
