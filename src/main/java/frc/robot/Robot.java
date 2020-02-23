@@ -447,9 +447,11 @@ limeHasTarget = false;
 
     if(operateController.getRawAxis(3) > 0.5){
     m_feeder.set(-0.7);
+    m_indexer.set(-0.7); 
     ballcount = 0;
     }else{
     m_feeder.set(0);
+    m_indexer.set(0);
     }
 
     m_hood.set(operateController.getRawAxis(1)*0.25);
