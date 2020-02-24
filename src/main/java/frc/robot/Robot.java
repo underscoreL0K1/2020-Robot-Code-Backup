@@ -227,8 +227,8 @@ double limeTarget;
   t_timer = new Timer();
   t_timer2 = new Timer(); 
    //PID!!!
-   kP = 5e-5; 
-   kI = 1e-6;
+   kP = 0; 
+   kI = 0;
    kD = 0; 
    kIz = 0; 
    kFF = 0.000156; 
