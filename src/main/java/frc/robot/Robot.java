@@ -517,13 +517,13 @@ m_feeder.set(0);
 limelightTracking();
 double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
 double hordis = Math.abs(tx);
-double steer = 0.06; 
+double steer = 0.055; 
 double limeTarget = tx * steer; 
 if(driveController.getRawAxis(3) > 0.7) {
     if(limeHasTarget = true){ //has a target
-      if (hordis > 1){
+      if (hordis > .1){
         m_myRobot.arcadeDrive(limeTarget, 0);
-      }else if(hordis < 1) {
+      }else if(hordis < .1) {
         m_myRobot.arcadeDrive(0, 0);
       }
     }
