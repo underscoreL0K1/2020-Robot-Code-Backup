@@ -20,6 +20,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.ControlType;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.PIDSourceType;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
@@ -108,7 +109,7 @@ public class Robot extends TimedRobot {
   private WPI_TalonFX m_talon4;
   private WPI_TalonFX m_talon5;
   private WPI_TalonFX m_talon6;
-  private Potentiometer s_hood;
+  private AnalogPotentiometer s_hood;
 
   final TalonFXInvertType kInvertType = TalonFXInvertType.CounterClockwise;
   XboxController driveController = new XboxController(0);
@@ -135,33 +136,8 @@ double limeTarget;
   m_talon5 = new WPI_TalonFX(5);
   m_talon6 = new WPI_TalonFX(6);
 
-  s_hood = new Potentiometer(){
-  
-    @Override
-    public void setPIDSourceType(PIDSourceType pidSource) {
-      // TODO Auto-generated method stub
-      
-    }
-  
-    @Override
-    public double pidGet() {
-      // TODO Auto-generated method stub
-      return 0;
-    }
-  
-    @Override
-    public PIDSourceType getPIDSourceType() {
-      // TODO Auto-generated method stub
-      return null;
-    }
-  
-    @Override
-    public double get() {
-      // TODO Auto-generated method stub
-      return 0;
-    }
-  };
-  
+  s_hood = new AnalogPotentiometer(0);
+
  // m_indexer.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, kTimeoutMs);
   m_collector = new WPI_VictorSPX(collectCANID);
   m_indexer = new WPI_TalonSRX(indexerCANID);
@@ -261,7 +237,7 @@ double limeTarget;
    maxRPM = 5700;
  
    // Smart Motion Coefficients
-   maxVel = 2000; // rpm
+   maxVel = 4000; // rpm
    maxAcc = 1500;
  
    p_shooter.setP(kP);
@@ -574,7 +550,7 @@ if(operateController.getAButton()){
  //double shooter_speed = 1500.0;
  //smart Dashboard
   SmartDashboard.putNumber("distance", heightValue/tanValue); //distance from target*/
- //
+  SmartDashboard.putNumber("Pot", ((s_hood.get() * 163.429271856365)-2.603118));
   SmartDashboard.putNumber("index encoder", m_indexer.getSensorCollection().getQuadraturePosition());
   SmartDashboard.putNumber("NeoEncoder1", shootEncoder1.getVelocity());
   SmartDashboard.putNumber("NeoEncoder2", shootEncoder2.getVelocity()); 
@@ -617,7 +593,7 @@ if(operateController.getAButton()){
     setPoint = 0;
       
       if(operateController.getRawAxis(2) > 0.5) {
-        setPoint = SmartDashboard.getNumber("Set Velocity", 2000);
+        setPoint = SmartDashboard.getNumber("Set Velocity", 4000);
       }
         /*else {
         setPoint = SmartDashboard.getNumber("Set Position", 0);
