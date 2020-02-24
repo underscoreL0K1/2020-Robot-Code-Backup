@@ -7,6 +7,7 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
@@ -20,9 +21,9 @@ import com.revrobotics.ControlType;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.PIDSourceType;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Solenoid;
-import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -30,6 +31,7 @@ import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.interfaces.Gyro;
+import edu.wpi.first.wpilibj.interfaces.Potentiometer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -106,11 +108,13 @@ public class Robot extends TimedRobot {
   private WPI_TalonFX m_talon4;
   private WPI_TalonFX m_talon5;
   private WPI_TalonFX m_talon6;
+  private Potentiometer s_hood;
 
   final TalonFXInvertType kInvertType = TalonFXInvertType.CounterClockwise;
   XboxController driveController = new XboxController(0);
   XboxController operateController = new XboxController(1);
   Compressor comp = new Compressor(0);
+  final int kTimeoutMs = 30;
   
 Boolean limeHasTarget = false;
 double limeTarget;
@@ -131,6 +135,34 @@ double limeTarget;
   m_talon5 = new WPI_TalonFX(5);
   m_talon6 = new WPI_TalonFX(6);
 
+  s_hood = new Potentiometer(){
+  
+    @Override
+    public void setPIDSourceType(PIDSourceType pidSource) {
+      // TODO Auto-generated method stub
+      
+    }
+  
+    @Override
+    public double pidGet() {
+      // TODO Auto-generated method stub
+      return 0;
+    }
+  
+    @Override
+    public PIDSourceType getPIDSourceType() {
+      // TODO Auto-generated method stub
+      return null;
+    }
+  
+    @Override
+    public double get() {
+      // TODO Auto-generated method stub
+      return 0;
+    }
+  };
+  
+ // m_indexer.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, kTimeoutMs);
   m_collector = new WPI_VictorSPX(collectCANID);
   m_indexer = new WPI_TalonSRX(indexerCANID);
   
@@ -144,6 +176,7 @@ double limeTarget;
   m_hood = new WPI_VictorSPX(hoodCANID); 
   s_ultra1 = new Ultrasonic(8, 9);
   s_ultra2 = new Ultrasonic(6, 7);
+  
   s_roboGyro = new Gyro(){
   
     @Override
@@ -409,6 +442,7 @@ limeHasTarget = false;
   @Override
   public void teleopInit() {
     s_ultra1.setAutomaticMode(true);
+    //m_indexer.getSensorCollection().setQuadraturePosition(0, kTimeoutMs);
     
   }
 
@@ -447,12 +481,21 @@ limeHasTarget = false;
 
     if(operateController.getRawAxis(3) > 0.5){
     m_feeder.set(-0.7);
-    m_indexer.set(-0.7); 
+    m_indexer.set(0.7); 
     ballcount = 0;
-    }else{
-    m_feeder.set(0);
-    m_indexer.set(0);
-    }
+    }else  if(operateController.getBumper(Hand.kLeft)){
+m_indexer.set(-0.3);
+m_collector.set(-1);
+m_feeder.set(.7);
+ }else if(operateController.getBumper(Hand.kRight)){
+m_indexer.set(0.3);
+m_collector.set(1);
+ }else{
+m_indexer.set(0);
+m_feeder.set(0);
+
+ }
+    
 
     m_hood.set(operateController.getRawAxis(1)*0.25);
 
@@ -523,15 +566,7 @@ if(operateController.getAButton()){
 }
 
  
- if(operateController.getBumper(Hand.kLeft)){
-m_indexer.set(-0.3);
-m_collector.set(-1);
- }else if(operateController.getBumper(Hand.kRight)){
-m_indexer.set(0.3);
-m_collector.set(1);
- }else{
-m_indexer.set(0);
- }
+
  
 
 
@@ -539,7 +574,8 @@ m_indexer.set(0);
  //double shooter_speed = 1500.0;
  //smart Dashboard
   SmartDashboard.putNumber("distance", heightValue/tanValue); //distance from target*/
-  SmartDashboard.putNumber("index encoder", m_indexer.getSelectedSensorPosition());
+ //
+  SmartDashboard.putNumber("index encoder", m_indexer.getSensorCollection().getQuadraturePosition());
   SmartDashboard.putNumber("NeoEncoder1", shootEncoder1.getVelocity());
   SmartDashboard.putNumber("NeoEncoder2", shootEncoder2.getVelocity()); 
   SmartDashboard.putNumber("ultra1", s_ultra1.getRangeInches());
