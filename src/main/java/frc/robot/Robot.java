@@ -19,6 +19,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.ControlType;
 
+import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.Compressor;
@@ -227,25 +228,25 @@ double limeTarget;
   t_timer = new Timer();
   t_timer2 = new Timer(); 
    //PID!!!
-   kP = 0; 
-   kI = 0;
+   kP = 1; //small out
+   kI = 0; 
    kD = 0; 
    kIz = 0; 
-   kFF = 0.000156; 
+   kFF = 0.000015; 
    kMaxOutput = 1; 
    kMinOutput = 0;
    maxRPM = 5700;
  
    // Smart Motion Coefficients
-   maxVel = 4000; // rpm
-   maxAcc = 1500;
+   maxVel = 5250; // rpm
+   maxAcc = 2625;
  
    p_shooter.setP(kP);
    p_shooter.setI(kI);
    p_shooter.setD(kD);
-     p_shooter.setIZone(kIz);
-     p_shooter.setFF(kFF);
-     p_shooter.setOutputRange(kMinOutput, kMaxOutput);
+   p_shooter.setIZone(kIz);
+   p_shooter.setFF(kFF);
+   p_shooter.setOutputRange(kMinOutput, kMaxOutput);
   
    int smartMotionSlot = 0;
    p_shooter.setSmartMotionMaxVelocity(maxVel, smartMotionSlot);
@@ -267,14 +268,15 @@ double limeTarget;
    SmartDashboard.putNumber("Min Velocity", minVel);
    SmartDashboard.putNumber("Max Acceleration", maxAcc);
    SmartDashboard.putNumber("Allowed Closed Loop Error", allowedErr);
-   SmartDashboard.putNumber("Set Position", 0);
    SmartDashboard.putNumber("Set Velocity", 4000);
  
-    // button to toggle between velocity and smart motion modes
-    SmartDashboard.putBoolean("Mode", true);
  
  }
-
+ public void limelightTracking(){
+  double steer = 0.1; 
+  double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+  double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
+ }
   /**
    * This function is called every robot packet, no matter the mode. Use
    * this for items like diagnostics that you want ran during disabled,
@@ -301,7 +303,7 @@ double limeTarget;
    * SendableChooser make sure to add them to the chooser code above as well.
    */
 
-   public void limelightTracking(){
+   /*public void limelightTracking(){
     double steer = 0.06; 
     double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
     double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
@@ -317,7 +319,7 @@ limeHasTarget = false;
 
 
    }
-
+*/
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
@@ -420,6 +422,7 @@ limeHasTarget = false;
     s_ultra1.setAutomaticMode(true);
     //m_indexer.getSensorCollection().setQuadraturePosition(0, kTimeoutMs);
     
+    
   }
 
   @Override
@@ -472,12 +475,47 @@ m_feeder.set(0);
 
  }
     
+ if (driveController.getRawAxis(3) > 0.65){
+  NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
+  NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
+} else if (driveController.getRawAxis(3) < 0.6) {
+  NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(1);
+  NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(1);
+}
 
     m_hood.set(operateController.getRawAxis(1)*0.25);
 
+/*if (driveController.getRawAxis(3) > .65) {
+      double kP_turn; 
+      double min_command;
+      
+      kP_turn = -.013; 
+      min_command = .08;
+      NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
+      
+      double error = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
 
-
+      if (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1) {
+        if (error > .7) {
+          steering_change = kP_turn * error - min_command;
+          SmartDashboard.putBoolean("lined: ", false);
+        } else if (error < -.7) {
+          steering_change = kP_turn * error + min_command;
+          SmartDashboard.putBoolean("lined: ", false);
+        } else {
+          SmartDashboard.putBoolean("lined: ", true);
+        }
+      } else {
+        SmartDashboard.putBoolean("lined: ", false);
+      }
   
+     
+    } else{
+      m_myRobot.arcadeDrive(Math.max(driveController.getRawAxis(1), -0.8), -steering_change, false);
+    }
+*/
+  
+
   //if(collecting){
     if(s_ultra1.getRangeInches() < 10){
         //run the index for however long
@@ -503,7 +541,7 @@ m_feeder.set(0);
   }else{
     s_ultra2Range = false;
   } 
- /*if(operateController.getAButton()){
+ if(operateController.getAButton()){
   m_collector.set(0.5);
    collecting = true;
  }else if(operateController.getBButton()){
@@ -513,24 +551,23 @@ m_feeder.set(0);
    collecting = false;
    
  }
-*/
 limelightTracking();
-double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+double tx = (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0));
 double hordis = Math.abs(tx);
-double steer = 0.055; 
+double steer = .055; 
 double limeTarget = tx * steer; 
-if(driveController.getRawAxis(3) > 0.7) {
-    if(limeHasTarget = true){ //has a target
-      if (hordis > .1){
+if(driveController.getRawAxis(3) > 0.7 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
+      if(tx < 5 && tx > -5){
+        m_myRobot.arcadeDrive((tx * .3 ), 0);
+      }else{
         m_myRobot.arcadeDrive(limeTarget, 0);
-      }else if(hordis < .1) {
-        m_myRobot.arcadeDrive(0, 0);
-      }
-    }
+      }    
   }else{
     m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
 
   }
+ 
+
 
     
 if(operateController.getAButton()){
@@ -595,20 +632,12 @@ if(operateController.getAButton()){
       if(operateController.getRawAxis(2) > 0.5) {
         setPoint = SmartDashboard.getNumber("Set Velocity", 4000);
       }
-        /*else {
-        setPoint = SmartDashboard.getNumber("Set Position", 0);
-        /**
-         * As with other PID modes, Smart Motion is set by calling the
-         * setReference method on an existing pid object and setting
-         * the control type to kSmartMotion
-          p_shooter.setReference(setPoint, ControlType.kSmartMotion);
-        processVariable = shootEncoder1.getPosition();
-      }*/
       p_shooter.setReference(setPoint, ControlType.kVelocity);
       processVariable = shootEncoder1.getVelocity();
       SmartDashboard.putNumber("SetPoint", setPoint);
       SmartDashboard.putNumber("Process Variable", processVariable);
       SmartDashboard.putNumber("Output", m_shooterleft.getAppliedOutput());
+    
     }
   
   //double distance = 3; //ft
