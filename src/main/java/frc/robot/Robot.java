@@ -96,6 +96,8 @@ public class Robot extends TimedRobot {
   
   private double gRCombin = circumference/gR;
   
+  private Timer t_ultra1;
+
   private Timer t_timer;
   private Timer t_timer2;
 
@@ -111,6 +113,8 @@ public class Robot extends TimedRobot {
   private WPI_TalonFX m_talon5;
   private WPI_TalonFX m_talon6;
   private AnalogPotentiometer s_hood;
+
+  double ultra1rangedouble;
 
   final TalonFXInvertType kInvertType = TalonFXInvertType.CounterClockwise;
   XboxController driveController = new XboxController(0);
@@ -151,8 +155,8 @@ double limeTarget;
 
   m_feeder = new WPI_VictorSPX(feederCANID);
   m_hood = new WPI_VictorSPX(hoodCANID); 
-  s_ultra1 = new Ultrasonic(8, 9);
-  s_ultra2 = new Ultrasonic(6, 7);
+  s_ultra1 = new Ultrasonic(7, 6);
+  s_ultra2 = new Ultrasonic(8, 9);
   
   s_roboGyro = new Gyro(){
   
@@ -227,8 +231,9 @@ double limeTarget;
   m_talon5.setInverted(kInvertType);
   t_timer = new Timer();
   t_timer2 = new Timer(); 
+  t_ultra1 = new Timer();
    //PID!!!
-   kP = 1; //small out
+   kP = .01; //small out
    kI = 0; 
    kD = 0; 
    kIz = 0; 
@@ -420,6 +425,9 @@ limeHasTarget = false;
   @Override
   public void teleopInit() {
     s_ultra1.setAutomaticMode(true);
+    s_ultra2.setAutomaticMode(true);
+    t_ultra1.reset();
+    t_ultra1.start();
     //m_indexer.getSensorCollection().setQuadraturePosition(0, kTimeoutMs);
     
     
@@ -458,20 +466,22 @@ limeHasTarget = false;
       a_collector.set(false);
     }
 
-    if(operateController.getRawAxis(3) > 0.5){
+  if(operateController.getRawAxis(3) > 0.5){
     m_feeder.set(-0.7);
     m_indexer.set(0.7); 
     ballcount = 0;
-    }else  if(operateController.getBumper(Hand.kLeft)){
-m_indexer.set(-0.3);
-m_collector.set(-1);
-m_feeder.set(.7);
+  }else if(operateController.getBumper(Hand.kLeft)){
+    m_indexer.set(-0.3);
+    m_collector.set(-1);
+    m_feeder.set(.7);
  }else if(operateController.getBumper(Hand.kRight)){
-m_indexer.set(0.3);
-m_collector.set(1);
- }else{
-m_indexer.set(0);
-m_feeder.set(0);
+    m_indexer.set(0.3);
+    m_collector.set(1);
+ }else if(s_ultra1.getRangeInches() < 5 && !(s_ultra2.getRangeInches() < 5)){
+  m_indexer.set(.3);
+}else {
+  m_indexer.set(0);
+  m_feeder.set(0);
 
  }
     
@@ -514,11 +524,13 @@ m_feeder.set(0);
       m_myRobot.arcadeDrive(Math.max(driveController.getRawAxis(1), -0.8), -steering_change, false);
     }
 */
-  
+if(t_ultra1.get() == .25){
+  ultra1rangedouble = s_ultra1.getRangeInches();
+  t_ultra1.reset();
+}
 
   //if(collecting){
-    if(s_ultra1.getRangeInches() < 10){
-        //run the index for however long
+    if(ultra1rangedouble < 1){
         s_ultra1Range = true;
     }else{
        s_ultra1Range = false;
@@ -526,6 +538,8 @@ m_feeder.set(0);
     }
  // }
 
+    if(s_ultra1.getRangeInches() < 4){
+    }
 
   if(s_ultra1Range){
     if(t_indexreset == 1){
@@ -535,6 +549,10 @@ m_feeder.set(0);
       t_indexreset++;
     }
   }
+
+ 
+
+
 
   if(s_ultra2.getRangeInches() < 8){
     s_ultra2Range = true;
@@ -557,11 +575,13 @@ double hordis = Math.abs(tx);
 double steer = .055; 
 double limeTarget = tx * steer; 
 if(driveController.getRawAxis(3) > 0.7 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
-      if(tx < 5 && tx > -5){
-        m_myRobot.arcadeDrive((tx * .3 ), 0);
+  if (hordis > 1 || hordis < -1) {
+  if(tx < 5 && tx > -5){
+        m_myRobot.arcadeDrive((tx * .1 ), 0);
       }else{
         m_myRobot.arcadeDrive(limeTarget, 0);
       }    
+    }
   }else{
     m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
 
@@ -597,6 +617,7 @@ if(operateController.getAButton()){
   SmartDashboard.putNumber("Gyro Angle", s_roboGyro.getAngle()); 
   SmartDashboard.putNumber("Ballcount", ballcount);
   SmartDashboard.putNumber("Index reset Timer", t_indexreset);
+  SmartDashboard.putNumber("ultra1Double", ultra1rangedouble);
     // read PID coefficients from SmartDashboard
     double p = SmartDashboard.getNumber("P Gain", 0);
     double i = SmartDashboard.getNumber("I Gain", 0);
@@ -637,6 +658,7 @@ if(operateController.getAButton()){
       SmartDashboard.putNumber("SetPoint", setPoint);
       SmartDashboard.putNumber("Process Variable", processVariable);
       SmartDashboard.putNumber("Output", m_shooterleft.getAppliedOutput());
+      System.out.println(processVariable);
     
     }
   
