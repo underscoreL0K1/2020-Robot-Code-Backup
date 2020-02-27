@@ -96,7 +96,7 @@ public class Robot extends TimedRobot {
   
   private double gRCombin = circumference/gR;
   
-  private Timer t_ultra1;
+  private int t_ultra1;
 
   private Timer t_timer;
   private Timer t_timer2;
@@ -231,7 +231,7 @@ double limeTarget;
   m_talon5.setInverted(kInvertType);
   t_timer = new Timer();
   t_timer2 = new Timer(); 
-  t_ultra1 = new Timer();
+  t_ultra1 = 0;
    //PID!!!
    kP = .01; //small out
    kI = 0; 
@@ -361,7 +361,7 @@ limeHasTarget = false;
     
     switch (m_autoSelected) {
       case kCustomAuto:
-       
+      
         break;
       case kDefaultAuto:
       default:
@@ -426,8 +426,7 @@ limeHasTarget = false;
   public void teleopInit() {
     s_ultra1.setAutomaticMode(true);
     s_ultra2.setAutomaticMode(true);
-    t_ultra1.reset();
-    t_ultra1.start();
+    t_ultra1 = 0;
     //m_indexer.getSensorCollection().setQuadraturePosition(0, kTimeoutMs);
     
     
@@ -435,7 +434,8 @@ limeHasTarget = false;
 
   @Override
   public void teleopPeriodic() {
- 
+  t_ultra1++;
+  
   shootEncoder1 = new CANEncoder(m_shooterleft);
   shootEncoder2 = new CANEncoder(m_shooterright);
 
@@ -445,12 +445,15 @@ limeHasTarget = false;
   final double h1 = 15.875; //height of limeligt
 
   final double a2 = Math.toRadians(NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0));
-  final double a1 = Math.toRadians(23); //angle of limelight
+  final double a1 = Math.toRadians(13); //angle of limelight
 
   final double heightValue = (h2 - h1);
   
   final double angleboth = a1 + a2;
   final double tanValue = Math.tan(angleboth);
+  double hoodAngle;
+  double calculateAngle;
+
   
   shootEncoder1 = new CANEncoder(m_shooterleft);
   shootEncoder2 = new CANEncoder(m_shooterright);
@@ -477,11 +480,19 @@ limeHasTarget = false;
  }else if(operateController.getBumper(Hand.kRight)){
     m_indexer.set(0.3);
     m_collector.set(1);
- }else if(s_ultra1.getRangeInches() < 5 && !(s_ultra2.getRangeInches() < 5)){
-  m_indexer.set(.3);
-}else {
+ }else if(s_ultra1.getRangeInches() < 5 && !(s_ultra2.getRangeInches() < 5 )){
+  m_indexer.set(.4);
+  collecting = true;
+}else { 
+  if(t_ultra1 < 10){
+    m_feeder.set(-.2);
+  } else if(collecting && s_ultra2.getRangeInches() < 8){
+    t_ultra1 = 0;
+  } else {
+    collecting = false;
+    m_feeder.set(0);                                     
+  }
   m_indexer.set(0);
-  m_feeder.set(0);
 
  }
     
@@ -493,8 +504,7 @@ limeHasTarget = false;
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(1);
 }
 
-    m_hood.set(operateController.getRawAxis(1)*0.25);
-
+    
 /*if (driveController.getRawAxis(3) > .65) {
       double kP_turn; 
       double min_command;
@@ -524,10 +534,7 @@ limeHasTarget = false;
       m_myRobot.arcadeDrive(Math.max(driveController.getRawAxis(1), -0.8), -steering_change, false);
     }
 */
-if(t_ultra1.get() == .25){
-  ultra1rangedouble = s_ultra1.getRangeInches();
-  t_ultra1.reset();
-}
+
 
   //if(collecting){
     if(ultra1rangedouble < 1){
@@ -554,21 +561,20 @@ if(t_ultra1.get() == .25){
 
 
 
-  if(s_ultra2.getRangeInches() < 8){
-    s_ultra2Range = true;
-  }else{
-    s_ultra2Range = false;
-  } 
+  
+  
  if(operateController.getAButton()){
-  m_collector.set(0.5);
+  m_collector.set(0.025);
    collecting = true;
  }else if(operateController.getBButton()){
-  m_collector.set(-0.5);
+  m_collector.set(-0.025);
  }else{
    m_collector.set(0);
    collecting = false;
    
  }
+
+
 limelightTracking();
 double tx = (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0));
 double hordis = Math.abs(tx);
@@ -586,6 +592,18 @@ if(driveController.getRawAxis(3) > 0.7 && (NetworkTableInstance.getDefault().get
     m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
 
   }
+calculateAngle = 1/*equation*/;
+hoodAngle = (((s_hood.get() * 163.429271856365)-2.603118) + 23); //place
+  if (hoodAngle > -0.25 && hoodAngle < 0.25) {
+  m_hood.set(operateController.getRawAxis(1)*0.25); 
+  } else if(driveController.getRawAxis(3) > 0.7 && hoodAngle > (calculateAngle+0.25)) {//changeable constant with the add
+    m_hood.set(-0.2);
+  }else if(driveController.getRawAxis(3) > 0.7 && hoodAngle < (calculateAngle -0.25)) {
+    m_hood.set(0.2);
+  } else{
+  m_hood.set(operateController.getRawAxis(1)*0.25);
+}
+  
  
 
 
@@ -607,7 +625,7 @@ if(operateController.getAButton()){
  //double shooter_speed = 1500.0;
  //smart Dashboard
   SmartDashboard.putNumber("distance", heightValue/tanValue); //distance from target*/
-  SmartDashboard.putNumber("Pot", ((s_hood.get() * 163.429271856365)-2.603118));
+  SmartDashboard.putNumber("Pot", (((s_hood.get() * 163.429271856365)-2.603118)) + 23); //angle of hood
   SmartDashboard.putNumber("index encoder", m_indexer.getSensorCollection().getQuadraturePosition());
   SmartDashboard.putNumber("NeoEncoder1", shootEncoder1.getVelocity());
   SmartDashboard.putNumber("NeoEncoder2", shootEncoder2.getVelocity()); 
@@ -633,19 +651,19 @@ if(operateController.getAButton()){
     
     
    // if PID coefficients on SmartDashboard have changed, write new values to controller
-   if((p != kP)) { p_shooter.setP(p); kP = p; }
-   if((i != kI)) { p_shooter.setI(i); kI = i; }
-   if((d != kD)) { p_shooter.setD(d); kD = d; }
-   if((iz != kIz)) { p_shooter.setIZone(iz); kIz = iz; }
-   if((ff != kFF)) { p_shooter.setFF(ff); kFF = ff; }
+   //if((p != kP)) { p_shooter.setP(p); kP = p; }
+   //if((i != kI)) { p_shooter.setI(i); kI = i; }
+   //if((d != kD)) { p_shooter.setD(d); kD = d; }
+   //if((iz != kIz)) { p_shooter.setIZone(iz); kIz = iz; }
+   //if((ff != kFF)) { p_shooter.setFF(ff); kFF = ff; }
    if((max != kMaxOutput) || (min != kMinOutput)) { 
-     p_shooter.setOutputRange(min, max); 
+   //  p_shooter.setOutputRange(min, max); 
      kMinOutput = min; kMaxOutput = max; 
    }
-   if((maxV != maxVel)) { p_shooter.setSmartMotionMaxVelocity(maxV,0); maxVel = maxV; }
-   if((minV != minVel)) { p_shooter.setSmartMotionMinOutputVelocity(minV,0); minVel = minV; }
-   if((maxA != maxAcc)) { p_shooter.setSmartMotionMaxAccel(maxA,0); maxAcc = maxA; }
-   if((allE != allowedErr)) { p_shooter.setSmartMotionAllowedClosedLoopError(allE,0); allowedErr = allE; }
+   //if((maxV != maxVel)) { p_shooter.setSmartMotionMaxVelocity(maxV,0); maxVel = maxV; }
+   //if((minV != minVel)) { p_shooter.setSmartMotionMinOutputVelocity(minV,0); minVel = minV; }
+   //if((maxA != maxAcc)) { p_shooter.setSmartMotionMaxAccel(maxA,0); maxAcc = maxA; }
+   //if((allE != allowedErr)) { p_shooter.setSmartMotionAllowedClosedLoopError(allE,0); allowedErr = allE; }
   
     double setPoint, processVariable;
     setPoint = 0;
@@ -653,7 +671,7 @@ if(operateController.getAButton()){
       if(operateController.getRawAxis(2) > 0.5) {
         setPoint = SmartDashboard.getNumber("Set Velocity", 4000);
       }
-      p_shooter.setReference(setPoint, ControlType.kVelocity);
+      //p_shooter.setReference(setPoint, ControlType.kVelocity);
       processVariable = shootEncoder1.getVelocity();
       SmartDashboard.putNumber("SetPoint", setPoint);
       SmartDashboard.putNumber("Process Variable", processVariable);
