@@ -7,7 +7,6 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
@@ -17,13 +16,11 @@ import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.ControlType;
 
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.PIDSourceType;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
@@ -31,9 +28,9 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.interfaces.Gyro;
-import edu.wpi.first.wpilibj.interfaces.Potentiometer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -52,15 +49,15 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   private DifferentialDrive m_myRobot;
  
-  public NeutralMode brake = NeutralMode.Brake;
+  public NeutralMode brake;
 
   private static final int shooterCANID_1 = 11;
   private static final int shooterCANID_2 = 14;
   private static final int collectCANID = 9;
   private static final int indexerCANID = 10;
   private static final int feederCANID = 8;
-  private static final int winchCANID_1 = 0;  //Neos
-  private static final int winchCANID_2 = 0;
+  //private static final int winchCANID_1 = 13;  //Neos
+  //private static final int winchCANID_2 = 12;
   private static final int hoodCANID = 7;
 
 
@@ -70,7 +67,9 @@ public class Robot extends TimedRobot {
 
 
 
-  private Solenoid a_collector;
+  private DoubleSolenoid a_collector; 
+  private Solenoid a_bigboypiston;
+  private Solenoid a_pancake;
 
   private int t_indexreset;
 
@@ -79,9 +78,16 @@ public class Robot extends TimedRobot {
   private boolean collecting = true;
   private boolean s_ultra1Range = false;
   private boolean s_ultra2Range = false;
-  private boolean togglecollector = false;
+  
+  
+  private SpeedControllerGroup left; 
+  private SpeedControllerGroup right; 
+
+ // private boolean togglecollector = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
+ // private CANSparkMax m_climbleft;
+  //private CANSparkMax m_climbright;
   private WPI_VictorSPX m_feeder; 
   private WPI_VictorSPX m_hood;
   private WPI_VictorSPX m_collector;
@@ -100,6 +106,9 @@ public class Robot extends TimedRobot {
 
   private Timer t_timer;
   private Timer t_timer2;
+  //private Timer t_auto; 
+ 
+
 
   private Ultrasonic s_ultra1;
   private Ultrasonic s_ultra2;
@@ -114,15 +123,18 @@ public class Robot extends TimedRobot {
   private WPI_TalonFX m_talon6;
   private AnalogPotentiometer s_hood;
 
-  double ultra1rangedouble;
+  private int smartMotionSlot;
+
+
+  
 
   final TalonFXInvertType kInvertType = TalonFXInvertType.CounterClockwise;
   XboxController driveController = new XboxController(0);
   XboxController operateController = new XboxController(1);
   Compressor comp = new Compressor(0);
-  final int kTimeoutMs = 30;
+  private boolean launch;
   
-Boolean limeHasTarget = false;
+//Boolean limeHasTarget = false;
 double limeTarget;
   /**
    * This function is run when the robot is first started up and should be
@@ -130,7 +142,7 @@ double limeTarget;
    */
   @Override
   public void robotInit() {
-
+  
 
 //Drive set
 
@@ -149,6 +161,9 @@ double limeTarget;
   
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
+  
+  brake = NeutralMode.Brake;
+
   m_shooterleft.setInverted(true);
   m_shooterright.follow(m_shooterleft, true);
  
@@ -158,55 +173,56 @@ double limeTarget;
   s_ultra1 = new Ultrasonic(7, 6);
   s_ultra2 = new Ultrasonic(8, 9);
   
-  s_roboGyro = new Gyro(){
   
-    @Override
-    public void close() throws Exception {
-      // TODO Auto-generated method stub
-      
-    }
   
-    @Override
-    public void reset() {
-      // TODO Auto-generated method stub
-      
-    }
-  
-    @Override
-    public double getRate() {
-      // TODO Auto-generated method stub
-      return 0;
-    }
-  
-    @Override
-    public double getAngle() {
-      // TODO Auto-generated method stub
-      return 0;
-    }
-  
-    @Override
-    public void calibrate() {
-      // TODO Auto-generated method stub
-      
-    }
-  };
-  
-  a_collector = new Solenoid(0);
+ a_collector = new DoubleSolenoid(2, 3); 
+  a_bigboypiston = new Solenoid(0);
+  a_pancake = new Solenoid(1);
+
 
   p_shooter = m_shooterleft.getPIDController();
   shootEncoder1 = m_shooterleft.getEncoder();
+s_roboGyro = new Gyro(){
 
+  @Override
+  public void close() throws Exception {
+    // TODO Auto-generated method stub
+    
+  }
 
+  @Override
+  public void reset() {
+    // TODO Auto-generated method stub
+    
+  }
 
-  final SpeedControllerGroup left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
-  final SpeedControllerGroup right = new SpeedControllerGroup(m_talon3, m_talon4, m_talon6);
+  @Override
+  public double getRate() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  @Override
+  public double getAngle() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  @Override
+  public void calibrate() {
+    // TODO Auto-generated method stub
+    
+  }
+};
+
+  left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
+  right = new SpeedControllerGroup(m_talon3, m_talon4, m_talon6);
 
   shootEncoder1 = new CANEncoder(m_shooterleft);
   shootEncoder2 = new CANEncoder(m_shooterright); 
 
   p_shooter = new CANPIDController(m_shooterleft);
   p_shooter.setFeedbackDevice(shootEncoder1);
-  
   
 
   m_myRobot = new DifferentialDrive(left, right);
@@ -253,7 +269,7 @@ double limeTarget;
    p_shooter.setFF(kFF);
    p_shooter.setOutputRange(kMinOutput, kMaxOutput);
   
-   int smartMotionSlot = 0;
+   smartMotionSlot = 0;
    p_shooter.setSmartMotionMaxVelocity(maxVel, smartMotionSlot);
    p_shooter.setSmartMotionMinOutputVelocity(minVel, smartMotionSlot);
    p_shooter.setSmartMotionMaxAccel(maxAcc, smartMotionSlot);
@@ -278,7 +294,7 @@ double limeTarget;
  
  }
  public void limelightTracking(){
-  double steer = 0.1; 
+  
   double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
   double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
  }
@@ -329,7 +345,7 @@ limeHasTarget = false;
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
     m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
+    //System.out.println("Auto selected: " + m_autoSelected);
     m_talon1.setSelectedSensorPosition(0);
     m_talon2.setSelectedSensorPosition(0);
     m_talon3.setSelectedSensorPosition(0);
@@ -361,7 +377,13 @@ limeHasTarget = false;
     
     switch (m_autoSelected) {
       case kCustomAuto:
-      
+        /*t_auto.start();
+        if(t_auto.get() < 3) {
+          m_myRobot.arcadeDrive(-0.3, 0);
+        } else if(t_auto.get() > 3 && t_auto.get() < 10)
+          //shooter rev
+          //hood work
+          //shoot balls in this 7 second interval*/
         break;
       case kDefaultAuto:
       default:
@@ -428,12 +450,14 @@ limeHasTarget = false;
     s_ultra2.setAutomaticMode(true);
     t_ultra1 = 0;
     //m_indexer.getSensorCollection().setQuadraturePosition(0, kTimeoutMs);
-    
+    comp.stop();
     
   }
 
   @Override
   public void teleopPeriodic() {
+  
+  
   t_ultra1++;
   
   shootEncoder1 = new CANEncoder(m_shooterleft);
@@ -442,7 +466,7 @@ limeHasTarget = false;
 
   //to be changed below based on actual robot values
   final double h2 = 90.875; //height of target
-  final double h1 = 15.875; //height of limeligt
+  final double h1 = 14.75; //height of limeligt
 
   final double a2 = Math.toRadians(NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0));
   final double a1 = Math.toRadians(13); //angle of limelight
@@ -454,20 +478,32 @@ limeHasTarget = false;
   double hoodAngle;
   double calculateAngle;
 
-  
   shootEncoder1 = new CANEncoder(m_shooterleft);
   shootEncoder2 = new CANEncoder(m_shooterright);
-    if(operateController.getYButton()){
-      togglecollector = !togglecollector;
+    
+  
+ if(operateController.getYButtonPressed() || driveController.getRawButton(6)) {
+      a_collector.set(Value.kForward);
+    } else if(operateController.getAButtonPressed() || driveController.getRawButton(5)){
+      a_collector.set(Value.kReverse);
+    } else {
+   
+      a_collector.set(Value.kOff);
     }
 
-
-    if(togglecollector){
-      a_collector.set(true);
-      
-    }else{
-      a_collector.set(false);
-    }
+  if(driveController.getAButtonPressed()) {
+   a_bigboypiston.set(true); 
+ } else if (driveController.getBButtonPressed()) {
+   a_bigboypiston.set(false);
+ } 
+ SmartDashboard.putBoolean("Ready to Launch", launch); 
+  if(driveController.getXButtonPressed() && driveController.getAButton()) {
+  a_pancake.set(true);
+  launch = false;
+}else if(driveController.getYButtonPressed()){
+  launch = true; 
+  a_pancake.set(false);
+}
 
   if(operateController.getRawAxis(3) > 0.5){
     m_feeder.set(-0.7);
@@ -493,7 +529,6 @@ limeHasTarget = false;
     m_feeder.set(0);                                     
   }
   m_indexer.set(0);
-
  }
     
  if (driveController.getRawAxis(3) > 0.65){
@@ -504,51 +539,8 @@ limeHasTarget = false;
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(1);
 }
 
-    
-/*if (driveController.getRawAxis(3) > .65) {
-      double kP_turn; 
-      double min_command;
-      
-      kP_turn = -.013; 
-      min_command = .08;
-      NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
-      
-      double error = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
 
-      if (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1) {
-        if (error > .7) {
-          steering_change = kP_turn * error - min_command;
-          SmartDashboard.putBoolean("lined: ", false);
-        } else if (error < -.7) {
-          steering_change = kP_turn * error + min_command;
-          SmartDashboard.putBoolean("lined: ", false);
-        } else {
-          SmartDashboard.putBoolean("lined: ", true);
-        }
-      } else {
-        SmartDashboard.putBoolean("lined: ", false);
-      }
-  
-     
-    } else{
-      m_myRobot.arcadeDrive(Math.max(driveController.getRawAxis(1), -0.8), -steering_change, false);
-    }
-*/
-
-
-  //if(collecting){
-    if(ultra1rangedouble < 1){
-        s_ultra1Range = true;
-    }else{
-       s_ultra1Range = false;
-       t_indexreset = 0;
-    }
- // }
-
-    if(s_ultra1.getRangeInches() < 4){
-    }
-
-  if(s_ultra1Range){
+ if(s_ultra1Range){
     if(t_indexreset == 1){
       ballcount++;
       t_indexreset++;
@@ -557,17 +549,11 @@ limeHasTarget = false;
     }
   }
 
- 
-
-
-
-  
-  
  if(operateController.getAButton()){
-  m_collector.set(0.025);
+  m_collector.set(0.5);
    collecting = true;
  }else if(operateController.getBButton()){
-  m_collector.set(-0.025);
+  m_collector.set(-0.5);
  }else{
    m_collector.set(0);
    collecting = false;
@@ -579,7 +565,7 @@ limelightTracking();
 double tx = (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0));
 double hordis = Math.abs(tx);
 double steer = .055; 
-double limeTarget = tx * steer; 
+limeTarget = tx * steer; 
 if(driveController.getRawAxis(3) > 0.7 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
   if (hordis > 1 || hordis < -1) {
   if(tx < 5 && tx > -5){
@@ -604,17 +590,16 @@ hoodAngle = (((s_hood.get() * 163.429271856365)-2.603118) + 23); //place
   m_hood.set(operateController.getRawAxis(1)*0.25);
 }
   
- 
+if(operateController.getRawButton(7)) {
+  comp.start();
+}
+ if(operateController.getRawButton(8)) {
+   comp.stop();
+ }
 
 
     
-if(operateController.getAButton()){
-  m_collector.set(1);
-} else if(operateController.getBButton()) {
-  m_collector.set(-1);
-}else{
-  m_collector.set(0);
-}
+
 
  
 
@@ -635,7 +620,6 @@ if(operateController.getAButton()){
   SmartDashboard.putNumber("Gyro Angle", s_roboGyro.getAngle()); 
   SmartDashboard.putNumber("Ballcount", ballcount);
   SmartDashboard.putNumber("Index reset Timer", t_indexreset);
-  SmartDashboard.putNumber("ultra1Double", ultra1rangedouble);
     // read PID coefficients from SmartDashboard
     double p = SmartDashboard.getNumber("P Gain", 0);
     double i = SmartDashboard.getNumber("I Gain", 0);
@@ -657,7 +641,7 @@ if(operateController.getAButton()){
    //if((iz != kIz)) { p_shooter.setIZone(iz); kIz = iz; }
    //if((ff != kFF)) { p_shooter.setFF(ff); kFF = ff; }
    if((max != kMaxOutput) || (min != kMinOutput)) { 
-   //  p_shooter.setOutputRange(min, max); 
+    p_shooter.setOutputRange(min, max); 
      kMinOutput = min; kMaxOutput = max; 
    }
    //if((maxV != maxVel)) { p_shooter.setSmartMotionMaxVelocity(maxV,0); maxVel = maxV; }
@@ -687,17 +671,12 @@ if(operateController.getAButton()){
   // C/GR = , RPM Encoder, Distacne per rotation of Motor
   @Override
   public void testInit() {
-   comp.start();
+    //comp.start();
    }
    
   @Override
   public void testPeriodic() {
-   if(operateController.getRawButton(2)) {
-     comp.start();
-   }
-    if(operateController.getRawButton(1)) {
-      comp.stop();
-    }
+   
   }
 
 
