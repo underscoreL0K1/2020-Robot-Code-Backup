@@ -15,6 +15,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -56,19 +57,15 @@ public class Robot extends TimedRobot {
   private static final int collectCANID = 9;
   private static final int indexerCANID = 10;
   private static final int feederCANID = 8;
-  //private static final int winchCANID_1 = 13;  //Neos
-  //private static final int winchCANID_2 = 12;
+  private static final int winchCANID_1 = 13;  //Neos
+  private static final int winchCANID_2 = 12;
   private static final int hoodCANID = 7;
 
-
-  
   private CANEncoder shootEncoder1;
   private CANEncoder shootEncoder2;
 
-
-
   private DoubleSolenoid a_collector; 
-  private Solenoid a_bigboypiston;
+  private DoubleSolenoid a_bigboypiston;
   private Solenoid a_pancake;
 
   private int t_indexreset;
@@ -83,20 +80,17 @@ public class Robot extends TimedRobot {
   private SpeedControllerGroup left; 
   private SpeedControllerGroup right; 
 
- // private boolean togglecollector = false;
+  private boolean togglecollector = false;
   private CANSparkMax m_shooterright;
   private CANSparkMax m_shooterleft;
- // private CANSparkMax m_climbleft;
-  //private CANSparkMax m_climbright;
+  private CANSparkMax m_climbleft;
+  private CANSparkMax m_climbright;
   private WPI_VictorSPX m_feeder; 
   private WPI_VictorSPX m_hood;
   private WPI_VictorSPX m_collector;
   private WPI_TalonSRX m_indexer;
   private Gyro s_roboGyro;
-  
-  private CANPIDController p_shooter;
-  public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM, maxVel, minVel, maxAcc, allowedErr;
-
+  public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM;
 
 
   
@@ -106,13 +100,13 @@ public class Robot extends TimedRobot {
 
   private Timer t_timer;
   private Timer t_timer2;
-  //private Timer t_auto; 
+  private Timer t_auto; 
  
 
 
   private Ultrasonic s_ultra1;
   private Ultrasonic s_ultra2;
-
+  private CANPIDController m_pidController;
   private int ballcount = 0;
 
   private WPI_TalonFX m_talon1;
@@ -155,9 +149,11 @@ double limeTarget;
 
   s_hood = new AnalogPotentiometer(0);
 
- // m_indexer.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, kTimeoutMs);
   m_collector = new WPI_VictorSPX(collectCANID);
   m_indexer = new WPI_TalonSRX(indexerCANID);
+  m_climbleft = new CANSparkMax(winchCANID_1, MotorType.kBrushless);
+  m_climbright = new CANSparkMax(winchCANID_2, MotorType.kBrushless);
+  
   
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
@@ -175,14 +171,17 @@ double limeTarget;
   
   
   
- a_collector = new DoubleSolenoid(2, 3); 
-  a_bigboypiston = new Solenoid(0);
+  a_collector = new DoubleSolenoid(2, 3); 
+  a_bigboypiston = new DoubleSolenoid(0, 7);
   a_pancake = new Solenoid(1);
 
 
-  p_shooter = m_shooterleft.getPIDController();
   shootEncoder1 = m_shooterleft.getEncoder();
-s_roboGyro = new Gyro(){
+  shootEncoder2 = m_shooterright.getEncoder();
+
+  // PID coefficients
+ 
+  s_roboGyro = new Gyro(){
 
   @Override
   public void close() throws Exception {
@@ -218,11 +217,9 @@ s_roboGyro = new Gyro(){
   left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
   right = new SpeedControllerGroup(m_talon3, m_talon4, m_talon6);
 
-  shootEncoder1 = new CANEncoder(m_shooterleft);
-  shootEncoder2 = new CANEncoder(m_shooterright); 
+  
 
-  p_shooter = new CANPIDController(m_shooterleft);
-  p_shooter.setFeedbackDevice(shootEncoder1);
+  
   
 
   m_myRobot = new DifferentialDrive(left, right);
@@ -248,49 +245,9 @@ s_roboGyro = new Gyro(){
   t_timer = new Timer();
   t_timer2 = new Timer(); 
   t_ultra1 = 0;
-   //PID!!!
-   kP = .01; //small out
-   kI = 0; 
-   kD = 0; 
-   kIz = 0; 
-   kFF = 0.000015; 
-   kMaxOutput = 1; 
-   kMinOutput = 0;
-   maxRPM = 5700;
+   
  
-   // Smart Motion Coefficients
-   maxVel = 5250; // rpm
-   maxAcc = 2625;
- 
-   p_shooter.setP(kP);
-   p_shooter.setI(kI);
-   p_shooter.setD(kD);
-   p_shooter.setIZone(kIz);
-   p_shooter.setFF(kFF);
-   p_shooter.setOutputRange(kMinOutput, kMaxOutput);
-  
-   smartMotionSlot = 0;
-   p_shooter.setSmartMotionMaxVelocity(maxVel, smartMotionSlot);
-   p_shooter.setSmartMotionMinOutputVelocity(minVel, smartMotionSlot);
-   p_shooter.setSmartMotionMaxAccel(maxAcc, smartMotionSlot);
-   p_shooter.setSmartMotionAllowedClosedLoopError(allowedErr, smartMotionSlot);
- 
-   // display PID coefficients on SmartDashboard
-   SmartDashboard.putNumber("P Gain", kP);
-   SmartDashboard.putNumber("I Gain", kI);
-   SmartDashboard.putNumber("D Gain", kD);
-   SmartDashboard.putNumber("I Zone", kIz);
-   SmartDashboard.putNumber("Feed Forward", kFF);
-   SmartDashboard.putNumber("Max Output", kMaxOutput);
-   SmartDashboard.putNumber("Min Output", kMinOutput);
- 
-   // display Smart Motion coefficients
-   SmartDashboard.putNumber("Max Velocity", maxVel);
-   SmartDashboard.putNumber("Min Velocity", minVel);
-   SmartDashboard.putNumber("Max Acceleration", maxAcc);
-   SmartDashboard.putNumber("Allowed Closed Loop Error", allowedErr);
-   SmartDashboard.putNumber("Set Velocity", 4000);
- 
+   
  
  }
  public void limelightTracking(){
@@ -357,6 +314,33 @@ limeHasTarget = false;
     t_timer.reset(); 
     t_timer.start();
 
+    m_pidController = m_shooterleft.getPIDController();
+    kP = .002; 
+  kI = 0.0;
+  kD = 0.002; 
+  kIz = 0; 
+  kFF = (10/5700) * 4000; 
+  kMaxOutput = 1; 
+  kMinOutput = 0;
+  maxRPM = 4000;
+
+  // set PID coefficients
+  m_pidController.setP(kP);
+  m_pidController.setI(kI);
+  m_pidController.setD(kD);
+  m_pidController.setIZone(kIz);
+  m_pidController.setFF(kFF);
+  m_pidController.setOutputRange(kMinOutput, kMaxOutput);
+
+  // display PID coefficients on SmartDashboard
+  SmartDashboard.putNumber("P Gain", kP);
+  SmartDashboard.putNumber("I Gain", kI);
+  SmartDashboard.putNumber("D Gain", kD);
+  SmartDashboard.putNumber("I Zone", kIz);
+  SmartDashboard.putNumber("Feed Forward", kFF);
+  SmartDashboard.putNumber("Max Output", kMaxOutput);
+  SmartDashboard.putNumber("Min Output", kMinOutput);
+
   }
 
   /**
@@ -377,14 +361,58 @@ limeHasTarget = false;
     
     switch (m_autoSelected) {
       case kCustomAuto:
-        /*t_auto.start();
+
+      // read PID coefficients from SmartDashboard
+  double p = SmartDashboard.getNumber("P Gain", 0);
+  double i = SmartDashboard.getNumber("I Gain", 0);
+  double d = SmartDashboard.getNumber("D Gain", 0);
+  double iz = SmartDashboard.getNumber("I Zone", 0);
+  double ff = SmartDashboard.getNumber("Feed Forward", 0);
+  double max = SmartDashboard.getNumber("Max Output", 0);
+  double min = SmartDashboard.getNumber("Min Output", 0);
+
+  // if PID coefficients on SmartDashboard have changed, write new values to controller
+  if((p != kP)) { m_pidController.setP(p); kP = p; }
+  if((i != kI)) { m_pidController.setI(i); kI = i; }
+  if((d != kD)) { m_pidController.setD(d); kD = d; }
+  if((iz != kIz)) { m_pidController.setIZone(iz); kIz = iz; }
+  if((ff != kFF)) { m_pidController.setFF(ff); kFF = ff; }
+  if((max != kMaxOutput) || (min != kMinOutput)) { 
+    m_pidController.setOutputRange(min, max); 
+    kMinOutput = min; kMaxOutput = max; 
+  }
+    double setPoint = operateController.getRawAxis(1)*maxRPM;
+  
+    //System.out.println(shootEncoder1.getVelocity());
+    
+    SmartDashboard.putNumber("SetPoint", setPoint);
+    SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
+    SmartDashboard.putNumber("ProcessVariable", shootEncoder2.getVelocity());
+
+    if (operateController.getRawAxis(2) > 0.7){
+      m_pidController.setReference(4000 , ControlType.kVelocity); ///////More Stuff
+    } else {
+      m_pidController.setReference(0 , ControlType.kVelocity);
+    }
+    t_auto.start();
+    if (t_auto.get() > 3 && t_auto.get() < 4 ) {
+      m_hood.set(0.25); 
+    } else { 
+      m_hood.set(0)
+;    }
         if(t_auto.get() < 3) {
-          m_myRobot.arcadeDrive(-0.3, 0);
-        } else if(t_auto.get() > 3 && t_auto.get() < 10)
-          //shooter rev
-          //hood work
+          m_myRobot.arcadeDrive(-0.4, 0);
+        } else if(t_auto.get() > 3 && t_auto.get() < 9.5)
+        m_pidController.setReference(4000 , ControlType.kVelocity); 
           //shoot balls in this 7 second interval*/
+        if(t_auto.get() > 5 && t_auto.get() < 9){
+          m_feeder.set(-1);
+          m_indexer.set(1); 
+        } 
+        t_auto.stop();
         break;
+
+
       case kDefaultAuto:
       default:
       if(state == 0){
@@ -451,7 +479,33 @@ limeHasTarget = false;
     t_ultra1 = 0;
     //m_indexer.getSensorCollection().setQuadraturePosition(0, kTimeoutMs);
     comp.stop();
-    
+    m_pidController = m_shooterleft.getPIDController();
+    kP = .002; 
+  kI = 0.0;
+  kD = 0.002; 
+  kIz = 0; 
+  kFF = (10/5700) * 4000; 
+  kMaxOutput = 1; 
+  kMinOutput = 0;
+  maxRPM = 4000;
+
+  // set PID coefficients
+  m_pidController.setP(kP);
+  m_pidController.setI(kI);
+  m_pidController.setD(kD);
+  m_pidController.setIZone(kIz);
+  m_pidController.setFF(kFF);
+  m_pidController.setOutputRange(kMinOutput, kMaxOutput);
+
+  // display PID coefficients on SmartDashboard
+  SmartDashboard.putNumber("P Gain", kP);
+  SmartDashboard.putNumber("I Gain", kI);
+  SmartDashboard.putNumber("D Gain", kD);
+  SmartDashboard.putNumber("I Zone", kIz);
+  SmartDashboard.putNumber("Feed Forward", kFF);
+  SmartDashboard.putNumber("Max Output", kMaxOutput);
+  SmartDashboard.putNumber("Min Output", kMinOutput);
+
   }
 
   @Override
@@ -460,8 +514,7 @@ limeHasTarget = false;
   
   t_ultra1++;
   
-  shootEncoder1 = new CANEncoder(m_shooterleft);
-  shootEncoder2 = new CANEncoder(m_shooterright);
+  
 
 
   //to be changed below based on actual robot values
@@ -478,9 +531,37 @@ limeHasTarget = false;
   double hoodAngle;
   double calculateAngle;
 
-  shootEncoder1 = new CANEncoder(m_shooterleft);
-  shootEncoder2 = new CANEncoder(m_shooterright);
+
+  // read PID coefficients from SmartDashboard
+  double p = SmartDashboard.getNumber("P Gain", 0);
+  double i = SmartDashboard.getNumber("I Gain", 0);
+  double d = SmartDashboard.getNumber("D Gain", 0);
+  double iz = SmartDashboard.getNumber("I Zone", 0);
+  double ff = SmartDashboard.getNumber("Feed Forward", 0);
+  double max = SmartDashboard.getNumber("Max Output", 0);
+  double min = SmartDashboard.getNumber("Min Output", 0);
+
+  // if PID coefficients on SmartDashboard have changed, write new values to controller
+  if((p != kP)) { m_pidController.setP(p); kP = p; }
+  if((i != kI)) { m_pidController.setI(i); kI = i; }
+  if((d != kD)) { m_pidController.setD(d); kD = d; }
+  if((iz != kIz)) { m_pidController.setIZone(iz); kIz = iz; }
+  if((ff != kFF)) { m_pidController.setFF(ff); kFF = ff; }
+  if((max != kMaxOutput) || (min != kMinOutput)) { 
+    m_pidController.setOutputRange(min, max); 
+    kMinOutput = min; kMaxOutput = max; 
+  }
+    double setPoint = operateController.getRawAxis(1)*maxRPM;
+  if (operateController.getRawAxis(2) > 0.7){
+    m_pidController.setReference(5200 , ControlType.kVelocity);
+  } else {
+    m_pidController.setReference(0 , ControlType.kVelocity);
+  }
+    System.out.println(shootEncoder1.getVelocity());
     
+    SmartDashboard.putNumber("SetPoint", setPoint);
+    SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
+    SmartDashboard.putNumber("ProcessVariable", shootEncoder2.getVelocity());
   
  if(operateController.getYButtonPressed() || driveController.getRawButton(6)) {
       a_collector.set(Value.kForward);
@@ -492,22 +573,24 @@ limeHasTarget = false;
     }
 
   if(driveController.getAButtonPressed()) {
-   a_bigboypiston.set(true); 
+   a_bigboypiston.set(Value.kForward); 
  } else if (driveController.getBButtonPressed()) {
-   a_bigboypiston.set(false);
- } 
+   a_bigboypiston.set(Value.kReverse);
+ } else {
+   a_bigboypiston.set(Value.kOff); 
+ }
  SmartDashboard.putBoolean("Ready to Launch", launch); 
-  if(driveController.getXButtonPressed() && driveController.getAButton()) {
+  if(driveController.getXButtonPressed() && driveController.getAButton() || operateController.getXButton()) {
   a_pancake.set(true);
   launch = false;
-}else if(driveController.getYButtonPressed()){
+}else if(driveController.getYButtonPressed()||operateController.getXButtonReleased()){
   launch = true; 
   a_pancake.set(false);
 }
 
   if(operateController.getRawAxis(3) > 0.5){
-    m_feeder.set(-0.7);
-    m_indexer.set(0.7); 
+    m_feeder.set(-1);
+    m_indexer.set(1); 
     ballcount = 0;
   }else if(operateController.getBumper(Hand.kLeft)){
     m_indexer.set(-0.3);
@@ -520,7 +603,7 @@ limeHasTarget = false;
   m_indexer.set(.4);
   collecting = true;
 }else { 
-  if(t_ultra1 < 10){
+  if(t_ultra1 < 6){
     m_feeder.set(-.2);
   } else if(collecting && s_ultra2.getRangeInches() < 8){
     t_ultra1 = 0;
@@ -530,7 +613,17 @@ limeHasTarget = false;
   }
   m_indexer.set(0);
  }
-    
+  if (operateController.getPOV() == 0) {
+    m_climbleft.set(0.5);
+    m_climbright.set(-0.5); 
+  } else if(operateController.getPOV() == 180){
+    m_climbleft.set(-0.5); 
+    m_climbright.set(0.5); 
+  } else {
+    m_climbleft.set(0);
+    m_climbright.set(0);
+  }
+
  if (driveController.getRawAxis(3) > 0.65){
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
@@ -538,6 +631,9 @@ limeHasTarget = false;
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(1);
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(1);
 }
+
+
+
 
 
  if(s_ultra1Range){
@@ -620,49 +716,8 @@ if(operateController.getRawButton(7)) {
   SmartDashboard.putNumber("Gyro Angle", s_roboGyro.getAngle()); 
   SmartDashboard.putNumber("Ballcount", ballcount);
   SmartDashboard.putNumber("Index reset Timer", t_indexreset);
-    // read PID coefficients from SmartDashboard
-    double p = SmartDashboard.getNumber("P Gain", 0);
-    double i = SmartDashboard.getNumber("I Gain", 0);
-    double d = SmartDashboard.getNumber("D Gain", 0);
-    double iz = SmartDashboard.getNumber("I Zone", 0);
-    double ff = SmartDashboard.getNumber("Feed Forward", 0);
-    double max = SmartDashboard.getNumber("Max Output", 0);
-    double min = SmartDashboard.getNumber("Min Output", 0);
-    double maxV = SmartDashboard.getNumber("Max Velocity", 0);
-    double minV = SmartDashboard.getNumber("Min Velocity", 0);
-    double maxA = SmartDashboard.getNumber("Max Acceleration", 0);
-    double allE = SmartDashboard.getNumber("Allowed Closed Loop Error", 0);
     
-    
-   // if PID coefficients on SmartDashboard have changed, write new values to controller
-   //if((p != kP)) { p_shooter.setP(p); kP = p; }
-   //if((i != kI)) { p_shooter.setI(i); kI = i; }
-   //if((d != kD)) { p_shooter.setD(d); kD = d; }
-   //if((iz != kIz)) { p_shooter.setIZone(iz); kIz = iz; }
-   //if((ff != kFF)) { p_shooter.setFF(ff); kFF = ff; }
-   if((max != kMaxOutput) || (min != kMinOutput)) { 
-    p_shooter.setOutputRange(min, max); 
-     kMinOutput = min; kMaxOutput = max; 
-   }
-   //if((maxV != maxVel)) { p_shooter.setSmartMotionMaxVelocity(maxV,0); maxVel = maxV; }
-   //if((minV != minVel)) { p_shooter.setSmartMotionMinOutputVelocity(minV,0); minVel = minV; }
-   //if((maxA != maxAcc)) { p_shooter.setSmartMotionMaxAccel(maxA,0); maxAcc = maxA; }
-   //if((allE != allowedErr)) { p_shooter.setSmartMotionAllowedClosedLoopError(allE,0); allowedErr = allE; }
-  
-    double setPoint, processVariable;
-    setPoint = 0;
-      
-      if(operateController.getRawAxis(2) > 0.5) {
-        setPoint = SmartDashboard.getNumber("Set Velocity", 4000);
-      }
-      //p_shooter.setReference(setPoint, ControlType.kVelocity);
-      processVariable = shootEncoder1.getVelocity();
-      SmartDashboard.putNumber("SetPoint", setPoint);
-      SmartDashboard.putNumber("Process Variable", processVariable);
-      SmartDashboard.putNumber("Output", m_shooterleft.getAppliedOutput());
-      System.out.println(processVariable);
-    
-    }
+}
   
   //double distance = 3; //ft
 //p_shooter.setReference(distance, ControlType.kPosition);
