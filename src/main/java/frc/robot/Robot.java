@@ -388,7 +388,9 @@ limeHasTarget = false;
     double setPoint = operateController.getRawAxis(1)*maxRPM;
   
     //System.out.println(shootEncoder1.getVelocity());
-    
+    double tx = (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0));
+    double hordis = Math.abs(tx);
+    double steer = .055; 
     SmartDashboard.putNumber("SetPoint", setPoint);
     SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
     SmartDashboard.putNumber("ProcessVariable", shootEncoder2.getVelocity());
@@ -400,9 +402,17 @@ limeHasTarget = false;
         } else {
         m_pidController.setReference(0, ControlType.kVelocity); 
         }
-
+        if(t_auto.get() > 0 && t_auto.get() < 8.5 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
+          if (hordis > 1 || hordis < -1) {
+          if(tx < 5 && tx > -5){
+                m_myRobot.arcadeDrive((tx * .1 ), 0);
+              }else{
+                m_myRobot.arcadeDrive(limeTarget, 0);
+              }    
+            }
+          }
        
-        if(t_auto.get() > 5 && t_auto.get() < 8.5){
+        if(t_auto.get() > 4.5 && t_auto.get() < 8.5){
           m_feeder.set(-1);
           m_indexer.set(1); 
         } 
