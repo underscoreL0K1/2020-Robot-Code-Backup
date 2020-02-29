@@ -232,6 +232,8 @@ double limeTarget;
   m_talon4.setInverted(true);
   m_talon6.setInverted(true);  
 
+  m_talon1.current
+
   m_talon1.setNeutralMode(brake);
   m_talon2.setNeutralMode(brake);
   m_talon3.setNeutralMode(brake);
@@ -341,6 +343,7 @@ limeHasTarget = false;
   SmartDashboard.putNumber("Feed Forward", kFF);
   SmartDashboard.putNumber("Max Output", kMaxOutput);
   SmartDashboard.putNumber("Min Output", kMinOutput);
+  t_auto.start();
 
   }
 
@@ -390,7 +393,6 @@ limeHasTarget = false;
     SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
     SmartDashboard.putNumber("ProcessVariable", shootEncoder2.getVelocity());
 
-    t_auto.start();
     
         
         if(t_auto.get() > 0 && t_auto.get() < 8.5){
@@ -478,7 +480,7 @@ limeHasTarget = false;
     //m_indexer.getSensorCollection().setQuadraturePosition(0, kTimeoutMs);
     comp.stop();
     m_pidController = m_shooterleft.getPIDController();
-    kP = .002; 
+  kP = .002; 
   kI = 0.0;
   kD = 0.002; 
   kIz = 0; 
@@ -608,7 +610,7 @@ limeHasTarget = false;
   m_indexer.set(.4);
   collecting = true;
 }else { 
-  if(t_ultra1 < 6){
+  if(t_ultra1 < 5){
     m_feeder.set(-.2);
   } else if(collecting && s_ultra2.getRangeInches() < 8){
     t_ultra1 = 0;
@@ -676,20 +678,24 @@ if(driveController.getRawAxis(3) > 0.7 && (NetworkTableInstance.getDefault().get
       }    
     }
   }else{
-    m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
+    if(driveController.getRawButton(7)){
+      m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
+    }else if(driveController.getRawButton(8)){
+      m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), (driveController.getY(Hand.kLeft)));
+    }
 
   }
 calculateAngle = 1/*equation*/;
 hoodAngle = (((s_hood.get() * 163.429271856365)-2.603118) + 23); //place
-  if (hoodAngle > -0.25 && hoodAngle < 0.25) {
-  m_hood.set(operateController.getRawAxis(1)*0.25); 
-  } else if(driveController.getRawAxis(3) > 0.7 && hoodAngle > (calculateAngle+0.25)) {//changeable constant with the add
-    m_hood.set(-0.2);
-  }else if(driveController.getRawAxis(3) > 0.7 && hoodAngle < (calculateAngle -0.25)) {
-    m_hood.set(0.2);
-  } else{
-  m_hood.set(operateController.getRawAxis(1)*0.25);
-}
+ // if (hoodAngle > -0.25 && hoodAngle < 0.25) {
+  //m_hood.set(operateController.getRawAxis(1)*0.25); 
+  //} else if(driveController.getRawAxis(3) > 0.7 && hoodAngle > (calculateAngle+0.25)) {//changeable constant with the add
+   // m_hood.set(-0.2);
+  //}else if(driveController.getRawAxis(3) > 0.7 && hoodAngle < (calculateAngle -0.25)) {
+   // m_hood.set(0.2);
+  //} else{
+ // m_hood.set(operateController.getRawAxis(1)*0.25);
+//}
   
 if(operateController.getRawButton(7)) {
   comp.start();
@@ -700,6 +706,7 @@ if(operateController.getRawButton(7)) {
 
 
 if(distanceFromTarget > 160 && distanceFromTarget < 200){
+
   inRANGE = true;
 } else {
   inRANGE = false;
