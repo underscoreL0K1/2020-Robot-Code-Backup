@@ -103,7 +103,7 @@ public class Robot extends TimedRobot {
   private Timer t_timer2;
   private Timer t_auto; 
  
-
+  private boolean inRANGE;
 
   private Ultrasonic s_ultra1;
   private Ultrasonic s_ultra2;
@@ -497,6 +497,9 @@ limeHasTarget = false;
   kMinOutput = 0;
   maxRPM = 4000;
 
+  inRANGE = false;
+
+
   // set PID coefficients
   m_pidController.setP(kP);
   m_pidController.setI(kI);
@@ -536,6 +539,10 @@ limeHasTarget = false;
   
   final double angleboth = a1 + a2;
   final double tanValue = Math.tan(angleboth);
+
+  double distanceFromTarget = heightValue/tanValue;
+
+
   double hoodAngle;
   double calculateAngle;
 
@@ -702,7 +709,11 @@ if(operateController.getRawButton(7)) {
  }
 
 
-    
+if(distanceFromTarget > 160 && distanceFromTarget < 200){
+  inRANGE = true;
+} else {
+  inRANGE = false;
+}
 
 
  
@@ -724,7 +735,7 @@ if(operateController.getRawButton(7)) {
   SmartDashboard.putNumber("Gyro Angle", s_roboGyro.getAngle()); 
   SmartDashboard.putNumber("Ballcount", ballcount);
   SmartDashboard.putNumber("Index reset Timer", t_indexreset);
-    
+  SmartDashboard.putBoolean("CANSHOOT", inRANGE);
 }
   
   //double distance = 3; //ft
