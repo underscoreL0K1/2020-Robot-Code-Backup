@@ -232,7 +232,7 @@ double limeTarget;
   m_talon4.setInverted(true);
   m_talon6.setInverted(true);  
 
-  m_talon1.current
+  
 
   m_talon1.setNeutralMode(brake);
   m_talon2.setNeutralMode(brake);
