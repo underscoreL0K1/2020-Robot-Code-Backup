@@ -7,6 +7,7 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
@@ -389,26 +390,23 @@ limeHasTarget = false;
     SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
     SmartDashboard.putNumber("ProcessVariable", shootEncoder2.getVelocity());
 
-    if (operateController.getRawAxis(2) > 0.7){
-      m_pidController.setReference(4000 , ControlType.kVelocity); ///////More Stuff
-    } else {
-      m_pidController.setReference(0 , ControlType.kVelocity);
-    }
     t_auto.start();
-    if (t_auto.get() > 3 && t_auto.get() < 4 ) {
-      m_hood.set(0.25); 
-    } else { 
-      m_hood.set(0)
-;    }
-        if(t_auto.get() < 3) {
-          m_myRobot.arcadeDrive(-0.4, 0);
-        } else if(t_auto.get() > 3 && t_auto.get() < 9.5)
+    
+        
+        if(t_auto.get() > 0 && t_auto.get() < 8.5){
         m_pidController.setReference(4000 , ControlType.kVelocity); 
-          //shoot balls in this 7 second interval*/
-        if(t_auto.get() > 5 && t_auto.get() < 9){
+        } else {
+        m_pidController.setReference(0, ControlType.kVelocity); 
+        }
+
+       
+        if(t_auto.get() > 5 && t_auto.get() < 8.5){
           m_feeder.set(-1);
           m_indexer.set(1); 
         } 
+        if(t_auto.get() > 8.5 && t_auto.get() < 11) {
+          m_myRobot.arcadeDrive(-0.6, 0);
+        }
         t_auto.stop();
         break;
 
