@@ -9,6 +9,7 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
@@ -119,7 +120,6 @@ public class Robot extends TimedRobot {
   private AnalogPotentiometer s_hood;
 
   private int smartMotionSlot;
-
 
   
 
@@ -232,7 +232,6 @@ double limeTarget;
   m_talon4.setInverted(true);
   m_talon6.setInverted(true);  
 
-  
 
   m_talon1.setNeutralMode(brake);
   m_talon2.setNeutralMode(brake);
@@ -574,7 +573,7 @@ limeHasTarget = false;
   } else {
     m_pidController.setReference(0 , ControlType.kVelocity);
   }
-    System.out.println(shootEncoder1.getVelocity());
+   // System.out.println(shootEncoder1.getVelocity());
     
     SmartDashboard.putNumber("SetPoint", setPoint);
     SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
@@ -607,7 +606,7 @@ limeHasTarget = false;
 
   if(operateController.getRawAxis(3) > 0.5){
     m_feeder.set(-1);
-    m_indexer.set(1); 
+    m_indexer.set(.7); 
     ballcount = 0;
   }else if(operateController.getBumper(Hand.kLeft)){
     m_indexer.set(-0.3);
@@ -663,7 +662,7 @@ limeHasTarget = false;
   }
 
  if(operateController.getAButton()){
-  m_collector.set(0.5);
+  m_collector.set(0.7);
    collecting = true;
  }else if(operateController.getBButton()){
   m_collector.set(-0.5);
@@ -688,11 +687,8 @@ if(driveController.getRawAxis(3) > 0.7 && (NetworkTableInstance.getDefault().get
       }    
     }
   }else{
-    if(driveController.getRawButton(7)){
+   
       m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
-    }else if(driveController.getRawButton(8)){
-      m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), (driveController.getY(Hand.kLeft)));
-    }
 
   }
 calculateAngle = 1/*equation*/;
