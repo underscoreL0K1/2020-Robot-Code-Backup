@@ -377,6 +377,14 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
         //m_pidController.setReference(5200 , ControlType.kVelocity); 
         m_shooterleft.set(0.9);
         m_shooterright.set(-0.9);
+        SmartDashboard.putNumber("SetPoint", setPoint);
+    SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
+    SmartDashboard.putNumber("ProcessVariable", shootEncoder2.getVelocity());
+
+    
+        
+        if(t_auto.get() > 0 && t_auto.get() < 8.5){
+        m_pidController.setReference(4000 , ControlType.kVelocity); 
         } else {
         //m_pidController.setReference(0, ControlType.kVelocity); 
         m_shooterleft.set(0);
@@ -399,10 +407,10 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
           m_feeder.set(-1);
           m_indexer.set(1); 
         } 
-        //if(x > 255 && x < 330) {
-        //  m_myRobot.arcadeDrive(-0.6, 0);
-        //}
-        
+        /*if(x > 255 && x < 330) {
+         m_myRobot.arcadeDrive(-0.6, 0);
+        }*/
+      }
        
     }
   
@@ -509,7 +517,6 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
     } else if(operateController.getAButtonPressed() || driveController.getRawButton(5)){
       a_collector.set(Value.kReverse);
     } else {
-   
       a_collector.set(Value.kOff);
     }
 
@@ -564,6 +571,9 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
     m_climbleft.set(0);
     m_climbright.set(0);
   }
+if(driveController.getRawButton(7) || driveController.getRawButton(8)) {
+  
+}
 
  if (driveController.getRawAxis(3) > 0.65){
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
@@ -573,7 +583,7 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(1);
 }
 
-
+ 
 
 
 
