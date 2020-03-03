@@ -8,6 +8,7 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlFrame;
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
@@ -121,6 +122,7 @@ public class Robot extends TimedRobot {
 
   private int smartMotionSlot;
 
+ int x;
   
 
   final TalonFXInvertType kInvertType = TalonFXInvertType.CounterClockwise;
@@ -155,7 +157,8 @@ double limeTarget;
   m_climbleft = new CANSparkMax(winchCANID_1, MotorType.kBrushless);
   m_climbright = new CANSparkMax(winchCANID_2, MotorType.kBrushless);
   
-  
+  x = 0;
+
   m_shooterleft = new CANSparkMax(shooterCANID_1, MotorType.kBrushless);
   m_shooterright = new CANSparkMax(shooterCANID_2, MotorType.kBrushless);
   
@@ -218,11 +221,6 @@ double limeTarget;
   left = new SpeedControllerGroup(m_talon1, m_talon2, m_talon5);
   right = new SpeedControllerGroup(m_talon3, m_talon4, m_talon6);
 
-  
-
-  
-  
-
   m_myRobot = new DifferentialDrive(left, right);
   
   m_talon1.setInverted(false);
@@ -232,7 +230,6 @@ double limeTarget;
   m_talon4.setInverted(true);
   m_talon6.setInverted(true);  
 
-
   m_talon1.setNeutralMode(brake);
   m_talon2.setNeutralMode(brake);
   m_talon3.setNeutralMode(brake);
@@ -240,7 +237,7 @@ double limeTarget;
   m_talon5.setNeutralMode(brake);  
   m_talon6.setNeutralMode(brake);
 
-  m_myRobot.setMaxOutput(0.9);
+  m_myRobot.setMaxOutput(0.60);
   m_talon1.setInverted(kInvertType);
   m_talon2.setInverted(kInvertType);
   m_talon5.setInverted(kInvertType);
@@ -258,7 +255,7 @@ double limeTarget;
   double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
  }
   /**
-   * This function is called every robot packet, no matter the mode. Use
+   * This funcion is called every robot packet, no matter the mode. Use
    * this for items like diagnostics that you want ran during disabled,
    * autonomous, teleoperated and test.
    *
@@ -283,15 +280,15 @@ double limeTarget;
    * SendableChooser make sure to add them to the chooser code above as well.
    */
 
-   /*public void limelightTracking(){
+    /*public void limelightTracking1(){
     double steer = 0.06; 
     double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
     double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
-if (tv < 1) {
-limeHasTarget = false;
-} else {
-  limeHasTarget = true;
-}
+    if (tv < 1) {
+      limeHasTarget = false;
+    } else {
+      limeHasTarget = true;
+    }
 
 
     double limeTarget = tx * steer; 
@@ -302,47 +299,12 @@ limeHasTarget = false;
 */
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
-    m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    //System.out.println("Auto selected: " + m_autoSelected);
-    m_talon1.setSelectedSensorPosition(0);
-    m_talon2.setSelectedSensorPosition(0);
-    m_talon3.setSelectedSensorPosition(0);
-    m_talon4.setSelectedSensorPosition(0);
-    m_talon5.setSelectedSensorPosition(0);
-    m_talon6.setSelectedSensorPosition(0);
-    m_feeder.setSelectedSensorPosition(0);
-    s_roboGyro.reset();
-    t_timer.reset(); 
-    t_timer.start();
+    x = 0;
 
-    m_pidController = m_shooterleft.getPIDController();
-    kP = .002; 
-  kI = 0.0;
-  kD = 0.002; 
-  kIz = 0; 
-  kFF = (10/5700) * 4000; 
-  kMaxOutput = 1; 
-  kMinOutput = 0;
-  maxRPM = 4000;
+NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
+NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
 
-  // set PID coefficients
-  m_pidController.setP(kP);
-  m_pidController.setI(kI);
-  m_pidController.setD(kD);
-  m_pidController.setIZone(kIz);
-  m_pidController.setFF(kFF);
-  m_pidController.setOutputRange(kMinOutput, kMaxOutput);
-
-  // display PID coefficients on SmartDashboard
-  SmartDashboard.putNumber("P Gain", kP);
-  SmartDashboard.putNumber("I Gain", kI);
-  SmartDashboard.putNumber("D Gain", kD);
-  SmartDashboard.putNumber("I Zone", kIz);
-  SmartDashboard.putNumber("Feed Forward", kFF);
-  SmartDashboard.putNumber("Max Output", kMaxOutput);
-  SmartDashboard.putNumber("Min Output", kMinOutput);
-  t_auto.start();
+//super.autonomousInit();
 
   }
 
@@ -351,6 +313,16 @@ limeHasTarget = false;
    */
   @Override
   public void autonomousPeriodic() {
+    x++;
+   if(x < 69){
+      left.set(-0.3);
+      right.set(-0.3);
+    } else {
+      left.set(0);
+      right.set(0); 
+
+    }
+  
     double s_mleft = Math.abs(m_talon1.getSelectedSensorPosition() / 2048);
     double s_mright = Math.abs(m_talon4.getSelectedSensorPosition()/2048);
     double lwheelSpin = gRCombin * s_mleft; 
@@ -362,10 +334,23 @@ limeHasTarget = false;
    
     //Gear Ratio: 10.25641025
     
-    switch (m_autoSelected) {
-      case kCustomAuto:
-
-      // read PID coefficients from SmartDashboard
+    
+  m_pidController = m_shooterleft.getPIDController();
+  kP = .002; 
+  kI = 0.0;
+  kD = 0.002; 
+  kIz = 0; 
+  kFF = (10/5700) * 4000; 
+  kMaxOutput = 1; 
+  kMinOutput = 0;
+  maxRPM = 4000;
+  m_pidController.setP(kP);
+  m_pidController.setI(kI);
+  m_pidController.setD(kD);
+  m_pidController.setIZone(kIz);
+  m_pidController.setFF(kFF);
+  m_pidController.setOutputRange(kMinOutput, kMaxOutput);
+       // read PID coefficients from SmartDashboard
   double p = SmartDashboard.getNumber("P Gain", 0);
   double i = SmartDashboard.getNumber("I Gain", 0);
   double d = SmartDashboard.getNumber("D Gain", 0);
@@ -386,11 +371,14 @@ limeHasTarget = false;
   }
     double setPoint = operateController.getRawAxis(1)*maxRPM;
   
-    //System.out.println(shootEncoder1.getVelocity());
     double tx = (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0));
     double hordis = Math.abs(tx);
     double steer = .055; 
-    SmartDashboard.putNumber("SetPoint", setPoint);
+      if(x > 0 && x < 255){
+        //m_pidController.setReference(5200 , ControlType.kVelocity); 
+        m_shooterleft.set(0.9);
+        m_shooterright.set(-0.9);
+        SmartDashboard.putNumber("SetPoint", setPoint);
     SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
     SmartDashboard.putNumber("ProcessVariable", shootEncoder2.getVelocity());
 
@@ -399,9 +387,14 @@ limeHasTarget = false;
         if(t_auto.get() > 0 && t_auto.get() < 8.5){
         m_pidController.setReference(4000 , ControlType.kVelocity); 
         } else {
-        m_pidController.setReference(0, ControlType.kVelocity); 
+        //m_pidController.setReference(0, ControlType.kVelocity); 
+        m_shooterleft.set(0);
+        m_shooterright.set(0);
+
         }
-        if(t_auto.get() > 0 && t_auto.get() < 8.5 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
+       
+        if(x > 40 && x < 255 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
+          
           if (hordis > 1 || hordis < -1) {
           if(tx < 5 && tx > -5){
                 m_myRobot.arcadeDrive((tx * .1 ), 0);
@@ -411,76 +404,17 @@ limeHasTarget = false;
             }
           }
        
-        if(t_auto.get() > 4.5 && t_auto.get() < 8.5){
+        if(x > 135 && x < 255){
           m_feeder.set(-1);
           m_indexer.set(1); 
         } 
-        if(t_auto.get() > 8.5 && t_auto.get() < 11) {
-          m_myRobot.arcadeDrive(-0.6, 0);
-        }
-        t_auto.stop();
-        break;
-
-
-      case kDefaultAuto:
-      default:
-      if(state == 0){
-        //run shooter
-        //align with target
-        if(s_roboGyro.getAngle() < -20){
-          //stop drive
-          state = 1;
-        }
+        /*if(x > 255 && x < 330) {
+         m_myRobot.arcadeDrive(-0.6, 0);
+        }*/
       }
-     if((state == 1)) {
-
-     //run feeder and index == shoots + limeligaht
-        
-        if(t_timer.get() > 4){
-          t_timer.stop();
-          state = 2;
-        }
-     } else if (state == 2){
-       //set motors to turn right
-       if(s_roboGyro.getAngle()  > 0){
-        //stop drive motrs turn
-        //drive back and collect
-        //index when ultrasonic
-        // as soon as encoders hit their mark, 
-                                              state = 3;
-       }else if (state == 3) {
-        //move backwards with encoder values to shooting position
-        //go to state 4 
-       } else if (state == 4) { 
-         //shoot timers and indexer stuff + limelight  t_timer_2 
-         //TELEOP!!!
-      }
-     }
-      
-      
-      //[      ] inches forward once it is 12 inches before the point that we want to reach we will run the colletor and indexer mechanism in preperation to grab the two balls. 
-        //At this point we will run them until the ultrasonic at the end of indexer is completely full.Then we will stop the indexer and the collector once this value is hit. Once this happens, we will reverse the function and move backwards a set amount of inches so we are at the point that we are at the ideal shooting range.
-        //Then we will start a timer. We will use the limelight to align at this point and then we will spin the shooter up to the ideal speed at that distance. 
-        //Once this is complete we will fire all 5 balls. (OPTIONAL) at this speed hopefully dead center. After this is complete we will turn to the left so the collector is facing forwards. We will then drive forwards and then spin to the right and then go collect the ones on the end of the rendevous and then. 
-
-        //Auto 2
-        //Already Lined at start. Rev shoot and feed and fire. straighten, backwards while collecting and indexing into. Then stop when the last one hits the back but this would be tough but we have to regulte when the actual things are moving. When we get to it. 
-  /*if ((l_wheelspin.get() > 0.5) && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)){
-    double kP_turn; 
-    double min_command;
-    double error = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
-    double steering_change = 0;    
-    kP_turn = -.013; 
-    min_command = .08;
-        if(lwheelSpin < 12 && rwheelSpin < 12) {
-        m_myRobot.arcadeDrive(0.2, 0);
-        } else if (lwheelSpin == 12 && rwheelSpin == 12) {
-          m_myRobot.arcadeDrive(0, 0);
-        }
-      }*/
-        break;
+       
     }
-  }
+  
   @Override
   public void teleopInit() {
     s_ultra1.setAutomaticMode(true);
@@ -489,7 +423,7 @@ limeHasTarget = false;
     //m_indexer.getSensorCollection().setQuadraturePosition(0, kTimeoutMs);
     comp.stop();
     m_pidController = m_shooterleft.getPIDController();
-  kP = .002; 
+    kP = .002; 
   kI = 0.0;
   kD = 0.002; 
   kIz = 0; 
@@ -584,7 +518,6 @@ limeHasTarget = false;
     } else if(operateController.getAButtonPressed() || driveController.getRawButton(5)){
       a_collector.set(Value.kReverse);
     } else {
-   
       a_collector.set(Value.kOff);
     }
 
@@ -619,7 +552,7 @@ limeHasTarget = false;
   m_indexer.set(.4);
   collecting = true;
 }else { 
-  if(t_ultra1 < 5){
+  if(t_ultra1 < 6){
     m_feeder.set(-.2);
   } else if(collecting && s_ultra2.getRangeInches() < 8){
     t_ultra1 = 0;
@@ -639,6 +572,9 @@ limeHasTarget = false;
     m_climbleft.set(0);
     m_climbright.set(0);
   }
+if(driveController.getRawButton(7) || driveController.getRawButton(8)) {
+  
+}
 
  if (driveController.getRawAxis(3) > 0.65){
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
@@ -648,7 +584,7 @@ limeHasTarget = false;
   NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(1);
 }
 
-
+ 
 
 
 
@@ -665,7 +601,7 @@ limeHasTarget = false;
   m_collector.set(0.7);
    collecting = true;
  }else if(operateController.getBButton()){
-  m_collector.set(-0.5);
+  m_collector.set(-0.7);
  }else{
    m_collector.set(0);
    collecting = false;
@@ -693,26 +629,20 @@ if(driveController.getRawAxis(3) > 0.7 && (NetworkTableInstance.getDefault().get
   }
 calculateAngle = 1/*equation*/;
 hoodAngle = (((s_hood.get() * 163.429271856365)-2.603118) + 23); //place
- // if (hoodAngle > -0.25 && hoodAngle < 0.25) {
-  //m_hood.set(operateController.getRawAxis(1)*0.25); 
-  //} else if(driveController.getRawAxis(3) > 0.7 && hoodAngle > (calculateAngle+0.25)) {//changeable constant with the add
-   // m_hood.set(-0.2);
-  //}else if(driveController.getRawAxis(3) > 0.7 && hoodAngle < (calculateAngle -0.25)) {
-   // m_hood.set(0.2);
-  //} else{
- // m_hood.set(operateController.getRawAxis(1)*0.25);
-//}
-  
-if(operateController.getRawButton(7)) {
-  comp.start();
+  if (hoodAngle > -0.25 && hoodAngle < 0.25) {
+  m_hood.set(operateController.getRawAxis(1)*0.25); 
+  } else if(driveController.getRawAxis(3) > 0.7 && hoodAngle > (calculateAngle+0.25)) {//changeable constant with the add
+    m_hood.set(-0.2);
+  }else if(driveController.getRawAxis(3) > 0.7 && hoodAngle < (calculateAngle -0.25)) {
+    m_hood.set(0.2);
+  } else{
+  m_hood.set(operateController.getRawAxis(1)*0.25);
 }
- if(operateController.getRawButton(8)) {
-   comp.stop();
- }
+  
+
 
 
 if(distanceFromTarget > 160 && distanceFromTarget < 200){
-
   inRANGE = true;
 } else {
   inRANGE = false;
@@ -753,7 +683,12 @@ if(distanceFromTarget > 160 && distanceFromTarget < 200){
    
   @Override
   public void testPeriodic() {
-   
+    if(operateController.getRawButton(7)) {
+      comp.start();
+    }
+     if(operateController.getRawButton(8)) {
+       comp.stop();
+     }
   }
 
 
