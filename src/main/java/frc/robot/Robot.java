@@ -302,7 +302,8 @@ double limeTarget;
     s_ultra1.setAutomaticMode(true);
     s_ultra2.setAutomaticMode(true);
     x = 0;
-
+    m_talon1.setSelectedSensorPosition(0);
+    m_talon4.setSelectedSensorPosition(0);
 NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
 NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
 
@@ -313,27 +314,48 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
   /**
    * This function is called periodically during autonomous.
    */
+ 
+  
   @Override
   public void autonomousPeriodic() {
+    double s_mleft = Math.abs(m_talon1.getSelectedSensorPosition() / 2048);
+    double s_mright = Math.abs(m_talon4.getSelectedSensorPosition()/2048);
+    double lwheelSpin = gRCombin * s_mleft; 
+    double rwheelSpin = gRCombin * s_mright; //how many inches per motor spin 
+    int state = 0;
     x++;
-   if(x < 69){
+   if(lwheelSpin < 60 && x < 135){
       left.set(-0.3);
       right.set(-0.3);
     } else if(x > 0 && x < 255){
+      if(x > 100 && x < 113){
+        m_hood.set(-.7);
+      }else{
+        m_hood.set(0);
+      }
       m_shooterleft.set(1); 
       m_shooterright.set(-1); 
       if(x > 135 && x < 255){
         m_feeder.set(-.8);
         m_indexer.set(.8); 
+        m_talon1.setSelectedSensorPosition(0);
+        m_talon4.setSelectedSensorPosition(0);
       } else {
         m_feeder.set(0); 
         m_indexer.set(0); 
       }
-     } else if (x > 255 && x < 266) {
-      left.set(0.3); 
-      right.set(-0.3);
+     } else if (x > 255) {
+      if(lwheelSpin < 5){
+        left.set(0.4);
+      } 
+      if(rwheelSpin < 5.25){
+        right.set(-0.4);
+      } 
       m_feeder.set(0); 
-     } else if (x > 270 && x < 400) {
+     } /*else {
+       right.set(0);
+       left.set(0);
+     }/* else if (x > 255&& x < 400) {
       left.set(-0.3);
       right.set(-0.3);
       m_collector.set(0.9); 
@@ -356,7 +378,7 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
      } else if (x > 643 && x < 660){ 
        m_indexer.set(0.8); 
        m_feeder.set(-0.8); 
-     }
+     }*/
      
     
     
@@ -364,12 +386,7 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
    
     //Gear Ratio: 10.25641025
     
-    /*double s_mleft = Math.abs(m_talon1.getSelectedSensorPosition() / 2048);
-    double s_mright = Math.abs(m_talon4.getSelectedSensorPosition()/2048);
-    double lwheelSpin = gRCombin * s_mleft; 
-    double rwheelSpin = gRCombin * s_mright; //how many inches per motor spin 
-    int state = 0;
-    */
+   
  /* m_pidController = m_shooterleft.getPIDController();
   kP = .002; 
   kI = 0.0;
@@ -420,7 +437,7 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
 
         }
        */ 
-        if(x > 40 && x < 255 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
+        //if(x > 40 && x < 255 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
           
           /*if (hordis > 1 || hordis < -1) {
             if(tx < 5 && tx > -5){
@@ -429,7 +446,7 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
               m_myRobot.arcadeDrive(limeTarget, 0);
             }    
           }*/
-        }
+        //}
        
         
         
@@ -588,8 +605,8 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
   m_indexer.set(0);
  }
   if (operateController.getPOV() == 0) {
-    m_climbleft.set(0.5);
-    m_climbright.set(-0.5); 
+    m_climbleft.set(0.65);
+    m_climbright.set(-0.65); 
   } else if(operateController.getPOV() == 180){
     m_climbleft.set(-0.5); 
     m_climbright.set(0.5); 
@@ -623,10 +640,10 @@ if(driveController.getRawButton(7) || driveController.getRawButton(8)) {
   }
 
  if(operateController.getAButton()){
-  m_collector.set(0.7);
+  m_collector.set(0.9);
    collecting = true;
  }else if(operateController.getBButton()){
-  m_collector.set(-0.7);
+  m_collector.set(-0.9);
  }else{
    m_collector.set(0);
    collecting = false;
