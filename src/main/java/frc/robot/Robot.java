@@ -299,8 +299,11 @@ double limeTarget;
 */
   @Override
   public void autonomousInit() {
+    s_ultra1.setAutomaticMode(true);
+    s_ultra2.setAutomaticMode(true);
     x = 0;
-
+    m_talon1.setSelectedSensorPosition(0);
+    m_talon4.setSelectedSensorPosition(0);
 NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
 NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
 
@@ -311,31 +314,80 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
   /**
    * This function is called periodically during autonomous.
    */
+ 
+  
   @Override
   public void autonomousPeriodic() {
-    x++;
-   if(x < 69){
-      left.set(-0.3);
-      right.set(-0.3);
-    } else {
-      left.set(0);
-      right.set(0); 
-
-    }
-  
     double s_mleft = Math.abs(m_talon1.getSelectedSensorPosition() / 2048);
     double s_mright = Math.abs(m_talon4.getSelectedSensorPosition()/2048);
     double lwheelSpin = gRCombin * s_mleft; 
     double rwheelSpin = gRCombin * s_mright; //how many inches per motor spin 
     int state = 0;
+    x++;
+   if(lwheelSpin < 60 && x < 135){
+      left.set(-0.3);
+      right.set(-0.3);
+    } else if(x > 0 && x < 255){
+      if(x > 100 && x < 113){
+        m_hood.set(-.7);
+      }else{
+        m_hood.set(0);
+      }
+      m_shooterleft.set(1); 
+      m_shooterright.set(-1); 
+      if(x > 135 && x < 255){
+        m_feeder.set(-.8);
+        m_indexer.set(.8); 
+        m_talon1.setSelectedSensorPosition(0);
+        m_talon4.setSelectedSensorPosition(0);
+      } else {
+        m_feeder.set(0); 
+        m_indexer.set(0); 
+      }
+     } else if (x > 255) {
+      if(lwheelSpin < 5){
+        left.set(0.4);
+      } 
+      if(rwheelSpin < 5.25){
+        right.set(-0.4);
+      } 
+      m_feeder.set(0); 
+     } /*else {
+       right.set(0);
+       left.set(0);
+     }/* else if (x > 255&& x < 400) {
+      left.set(-0.3);
+      right.set(-0.3);
+      m_collector.set(0.9); 
+      a_collector.set(Value.kReverse);
+      if(s_ultra1.getRangeInches() < 5 && !(s_ultra2.getRangeInches() < 5 )){
+        m_indexer.set(.4);
+        collecting = true;
+      } else { 
+        m_indexer.set(0); 
+      }
+      m_feeder.set(0); 
+     } else if (x > 450 && x < 615) {
+       left.set(0.3); 
+       right.set(0.3); 
+       m_feeder.set(0);
+     } else if (x > 615 && x < 628) {
+       left.set(-0.3); 
+       right.set(0.3);
+       m_feeder.set(0); 
+     } else if (x > 643 && x < 660){ 
+       m_indexer.set(0.8); 
+       m_feeder.set(-0.8); 
+     }*/
+     
     
-   
+    
     
    
     //Gear Ratio: 10.25641025
     
-    
-  m_pidController = m_shooterleft.getPIDController();
+   
+ /* m_pidController = m_shooterleft.getPIDController();
   kP = .002; 
   kI = 0.0;
   kD = 0.002; 
@@ -374,17 +426,9 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
     double tx = (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0));
     double hordis = Math.abs(tx);
     double steer = .055; 
-      if(x > 0 && x < 255){
-        //m_pidController.setReference(5200 , ControlType.kVelocity); 
-        m_shooterleft.set(0.9);
-        m_shooterright.set(-0.9);
-        SmartDashboard.putNumber("SetPoint", setPoint);
-    SmartDashboard.putNumber("ProcessVariable", shootEncoder1.getVelocity());
-    SmartDashboard.putNumber("ProcessVariable", shootEncoder2.getVelocity());
-
-    
+      */
         
-        if(t_auto.get() > 0 && t_auto.get() < 8.5){
+       /* if(t_auto.get() > 0 && t_auto.get() < 8.5){
         m_pidController.setReference(4000 , ControlType.kVelocity); 
         } else {
         //m_pidController.setReference(0, ControlType.kVelocity); 
@@ -392,28 +436,26 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
         m_shooterright.set(0);
 
         }
-       
-        if(x > 40 && x < 255 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
+       */ 
+        //if(x > 40 && x < 255 && (NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0) == 1)) {
           
-          if (hordis > 1 || hordis < -1) {
-          if(tx < 5 && tx > -5){
-                m_myRobot.arcadeDrive((tx * .1 ), 0);
-              }else{
-                m_myRobot.arcadeDrive(limeTarget, 0);
-              }    
-            }
-          }
+          /*if (hordis > 1 || hordis < -1) {
+            if(tx < 5 && tx > -5){
+              m_myRobot.arcadeDrive((tx * .1 ), 0);
+            }else{
+              m_myRobot.arcadeDrive(limeTarget, 0);
+            }    
+          }*/
+        //}
        
-        if(x > 135 && x < 255){
-          m_feeder.set(-1);
-          m_indexer.set(1); 
-        } 
-        /*if(x > 255 && x < 330) {
-         m_myRobot.arcadeDrive(-0.6, 0);
-        }*/
-      }
+        
+        
+        
+        }
+
+      
        
-    }
+    
   
   @Override
   public void teleopInit() {
@@ -563,8 +605,8 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
   m_indexer.set(0);
  }
   if (operateController.getPOV() == 0) {
-    m_climbleft.set(0.5);
-    m_climbright.set(-0.5); 
+    m_climbleft.set(0.65);
+    m_climbright.set(-0.65); 
   } else if(operateController.getPOV() == 180){
     m_climbleft.set(-0.5); 
     m_climbright.set(0.5); 
@@ -598,10 +640,10 @@ if(driveController.getRawButton(7) || driveController.getRawButton(8)) {
   }
 
  if(operateController.getAButton()){
-  m_collector.set(0.7);
+  m_collector.set(0.9);
    collecting = true;
  }else if(operateController.getBButton()){
-  m_collector.set(-0.7);
+  m_collector.set(-0.9);
  }else{
    m_collector.set(0);
    collecting = false;
