@@ -627,17 +627,17 @@ if(driveController.getRawAxis(3) > 0.7 && (NetworkTableInstance.getDefault().get
       m_myRobot.arcadeDrive((driveController.getX(Hand.kRight)), -(driveController.getY(Hand.kLeft)));
 
   }
-calculateAngle = 1/*equation*/;
-hoodAngle = (((s_hood.get() * 163.429271856365)-2.603118) + 23); //place
-  if (hoodAngle > -0.25 && hoodAngle < 0.25) {
-  m_hood.set(operateController.getRawAxis(1)*0.25); 
-  } else if(driveController.getRawAxis(3) > 0.7 && hoodAngle > (calculateAngle+0.25)) {//changeable constant with the add
-    m_hood.set(-0.2);
-  }else if(driveController.getRawAxis(3) > 0.7 && hoodAngle < (calculateAngle -0.25)) {
-    m_hood.set(0.2);
-  } else{
-  m_hood.set(operateController.getRawAxis(1)*0.25);
-}
+//calculateAngle = 1/*equation*/;
+//hoodAngle = (((s_hood.get() * 163.429271856365)-2.603118) + 23); //place
+ // if (hoodAngle > -0.25 && hoodAngle < 0.25) {
+ // m_hood.set(operateController.getRawAxis(1)*0.25); 
+ // } else if(driveController.getRawAxis(3) > 0.7 && hoodAngle > (calculateAngle+0.25)) {//changeable constant with the add
+  //  m_hood.set(-0.2);
+  //}else if(driveController.getRawAxis(3) > 0.7 && hoodAngle < (calculateAngle -0.25)) {
+  //  m_hood.set(0.2);
+  //} else{
+  m_hood.set(operateController.getRawAxis(1)*0.25);//
+//}
   
 
 
