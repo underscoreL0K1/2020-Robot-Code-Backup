@@ -338,17 +338,17 @@ NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setN
       if(x > 135 && x < 255){
         m_feeder.set(-.8);
         m_indexer.set(.8); 
-        m_talon1.setSelectedSensorPosition(0);
-        m_talon4.setSelectedSensorPosition(0);
+        //m_talon1.setSelectedSensorPosition(0);
+        //m_talon4.setSelectedSensorPosition(0);
       } else {
         m_feeder.set(0); 
         m_indexer.set(0); 
       }
      } else if (x > 255) {
-      if(lwheelSpin < 5){
+      if(lwheelSpin < 65.25){
         left.set(0.4);
       } 
-      if(rwheelSpin < 5.25){
+      if(rwheelSpin < 65.25){
         right.set(-0.4);
       } 
       m_feeder.set(0); 
